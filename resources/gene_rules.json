@@ -1,0 +1,31 @@
+{
+	"rules": {
+		"biallelic": {
+			"af": 0.005,
+			"GT": ["1/1"]
+		},
+		"monoallelic": {
+			"af": 0.0001,
+			"GT": ["0/1", "1/0", "1/1"]
+		},
+		"hemizygous": {
+			"af": 0.0001,
+			"GT": ["0/1", "1/0", "1/1"]
+		},
+		"xlinked_dominant": {
+			"af": 0.0001,
+			"GT": ["0/1", "1/0", "1/1"]
+		},
+		"both": {
+			"af": 0.005,
+			"GT": ["0/1", "1/0", "1/1"]
+		}
+	},
+	"csq_types": [
+		"splice_donor_variant", "splice_acceptor_variant", "stop_gained",
+		"frameshift_variant", "stop_lost", "initiator_codon_variant",
+		"inframe_insertion", "inframe_deletion", "missense_variant",
+		"coding_sequence_variant", "start_lost", "transcript_ablation",
+		"transcript_amplification", "protein_altering_variant"
+	]
+}
