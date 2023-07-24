@@ -1,3 +1,4 @@
+import concurrent.futures
 import json
 
 from collections import defaultdict
@@ -19,11 +20,14 @@ def read_in_mappings():
     """
     # Read in inheritance mappings from JSON file in /resources
     with open(
-        ROOT_DIR.joinpath(f"{ROOT_DIR}/resources/inheritance_mapping.json"), 'r', encoding='utf8'
+        ROOT_DIR.joinpath("resources", "inheritance_mapping"/inheritance_mapping.json"), 'r', encoding='utf8'
     ) as json_file:
         mappings = json.load(json_file)
 
     return mappings
+
+get_r_code = r"[R]\d\w*\b"
+signedoff_panels = queries.get_all_signedoff_panels()
 
 def get_panel_data(panel_id):
     """
@@ -178,9 +182,10 @@ def map_moi_to_simpler_terms(panel_dict, mappings):
 
     return new_dict
 
+
 def get_formatted_dict(panel_id):
     """
-    _summary_
+    Main function to get a simple dictionary for each panel
 
     Parameters
     ----------
