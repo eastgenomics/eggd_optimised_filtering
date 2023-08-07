@@ -1,167 +1,92 @@
-import concurrent.futures
-import json
+import dxpy as dx
+import re
 
 from collections import defaultdict
-from panelapp import api, Panelapp, queries
 from pathlib import Path
+
+from .file_utils import read_in_json_from_dnanexus
 
 # Get path one directory above this file
 ROOT_DIR = Path(__file__).absolute().parents[1]
 
 
-def read_in_mappings():
+# def parse_R_code(panel_string):
+#     test_codes = list(set(
+#         [CI.strip(" ") for CI in panel_string.split(",") if
+#         re.search(r"^[RC][0-9]+\.[0-9]+", CI.strip(" ")) or
+#         re.search(r"^_HGNC", CI.strip(" "))]
+#     ))
+
+#     return test_codes
+
+
+def parse_genepanels(genepanels_file_id):
     """
-    Read in the inheritance terms and their mapping to simpler alternatives
-
-    Returns
-    -------
-    mappings : dict
-        dictionary with each MOI term and its simpler alternative
-    """
-    # Read in inheritance mappings from JSON file in /resources
-    with open(
-        ROOT_DIR.joinpath("resources", "inheritance_mapping"/inheritance_mapping.json"), 'r', encoding='utf8'
-    ) as json_file:
-        mappings = json.load(json_file)
-
-    return mappings
-
-get_r_code = r"[R]\d\w*\b"
-signedoff_panels = queries.get_all_signedoff_panels()
-
-def get_panel_data(panel_id):
-    """
-    Get information on the panel by its ID
+    Parse the genepanels file to make a dict mapping clinical indication
+    to PanelApp panel ID
 
     Parameters
     ----------
-    panel_id : int
-        ID of the panel of interest
+    genepanels_file_id : str
+        DNAnexus file ID of the genepanels file: 'proj-XYZ:file-XYZ'
 
     Returns
     -------
-    panel_data : dict
-        dict containing information about specific panel and genes/entities on
-        the panel
-    Example:
-    {
-        'id': 123,
-        'hash_id': 'XX',
-        'name': 'Name of panel',
-        'disease_group': 'X disorders',
-        'disease_sub_group': 'X syndromes',
-        'status': 'public',
-        'version': 'X.X',
-        'version_created': '2023-04-17T10:55:17.407924Z',
-        'relevant_disorders': ['disorder'],
-        'stats': {
-            'number_of_genes': 44,
-            'number_of_strs': 0,
-            'number_of_regions': 3,
-        'types': [
-            {
-                "name": 'Rare Disease 100K',
-                'slug': 'rare-disease-100k',
-                'description': 'Rare Disease 100K'
-            },
-            ...
-        ],
-        'genes': [
-            {
-                'gene_data': {
-                    'alias': 'symbol',
-                    'biotype': 'protein_coding',
-                    'hgnc_id': 'HGNC:123',
-                    ...
-                },
-                'entity_type': 'gene',
-                'entity_name': 'ALMS1',
-                'confidence_level': '3',
-                'penetrance': 'Complete',
-                'mode_of_pathogenicity': "",
-                'publications': [],
-                'evidence': [..],
-                'phenotypes': ['X syndrome'],
-                'mode_of_inheritance': "BIALLELIC, autosomal or pseudoautosomal',
-                'tags': [],
-                'transcript': null
-            }
-        ],
-        'strs': [],
-        'regions': [
-            {
-                "gene_data": null,
-            "entity_type": "region",
-            "entity_name": "ISCA-37404-Loss",
-            "verbose_name": "15q11q13 recurrent (PWS/AS) region (BP1-BP3, Class 1) Loss",
-            "confidence_level": "3",
-            "penetrance": null,
-            "mode_of_pathogenicity": null,
-            "haploinsufficiency_score": "3",
-            "triplosensitivity_score": "",
-            "required_overlap_percentage": 60,
-            "type_of_variants": "cnv_loss",
-            "publications": [
-                "22045295",
-                ...
-            ],
-            "evidence": [
-                "Expert list",
-                ...
-            ],
-            "phenotypes": [
-                "microcephaly",
-                ....
-            ],
-            "mode_of_inheritance": "MONOALLELIC, autosomal or pseudoautosomal, imprinted status unknown",
-            "chromosome": "15",
-            "grch37_coordinates": null,
-            "grch38_coordinates": [
-                22782170,
-                28134728
-            }
-        ]
-    }
+    panel_data : TODO
+        _description_
     """
-    panel_data = Panelapp.Panel(panel_id).get_data()
+    panel_data = {}
+    proj_id, file_id = genepanels_file_id.split(":")
+
+    with dx.open_dxfile(file_id, project=proj_id) as gp_file:
+        for line in gp_file:
+            panel_id, clin_ind, panel, gene = line.split('\t')
+            panel_data.setdefault(clin_ind, set()).add(panel_id)
+
     return panel_data
 
-def get_gene_region_info(panel_data):
-    """
-    _summary_
 
-    Parameters
-    ----------
-    panel_data : _type_
-        _description_
+def get_panel_id_from_genepanels(panel_string, genepanels_dict):
+    panel_set = genepanels_dict.get(panel_string)
+    panel_id = [p_id for p_id in panel_set][0]
 
-    Returns
-    -------
-    genes : list
-        list of dicts containing info about each gene
-    regions : list
-        list of dicts containing info about each region
-    """
+    return panel_id
+
+
+# def read_in_panelapp_dump(panelapp_file_id):
+#     proj_id, file_id = panelapp_file_id.split(":")
+
+#     with dx.open_dxfile(file_id, project=proj_id) as pd:
+#         panelapp_dump = json.load(pd)
+
+#     return panelapp_dump
+
+
+def parse_panelapp_dump(panel_id, panelapp_dump):
+    my_panel = [
+        item for item in panelapp_dump if item['external_id'] == panel_id][0]
+
+    return my_panel
+
+
+def format_panel_info(panel_data):
+
+    panel_dict = defaultdict(dict)
     genes = panel_data.get('genes')
     regions = panel_data.get('regions')
 
-    return genes, regions
-
-
-def format_panel_info_as_dict(genes, regions):
-
-    panel_dict = defaultdict(dict)
     if genes:
         for gene in genes:
-            gene_symbol = gene.get('gene_data').get('gene_symbol')
+            gene_symbol = gene.get('gene_symbol')
             moi = gene.get('mode_of_inheritance')
             conf_level = int(gene.get('confidence_level'))
             if conf_level >= 3:
                 panel_dict[gene_symbol]['mode_of_inheritance'] = moi
                 panel_dict[gene_symbol]['entity_type'] = 'gene'
+
     if regions:
         for region in regions:
-            region_name = region.get('entity_name')
+            region_name = region.get('name')
             conf_level = int(region.get('confidence_level'))
             moi = region.get('mode_of_inheritance')
             if conf_level >=3:
@@ -171,19 +96,25 @@ def format_panel_info_as_dict(genes, regions):
     return panel_dict
 
 
-def map_moi_to_simpler_terms(panel_dict, mappings):
-    new_dict = defaultdict(dict)
-    # For each gene in our panel_dict, get mode of inheritance
-    for gene, values in panel_dict.items():
-        inheritance = values['mode_of_inheritance']
-        # Get the mapped simpler value for that MOI
-        mapped_value = mappings.get(inheritance)
-        new_dict[gene]['mode_of_inheritance'] = mapped_value
+def simplify_MOI_terms(panel_dict):
+    updated_gene_dict = defaultdict(dict)
+    for gene, moi_info in panel_dict.items():
+        moi = moi_info.get('mode_of_inheritance')
+        if re.search(r"^BIALLELIC", moi):
+            updated_moi = 'biallelic'
+        elif re.search(r"^MONOALLELIC|X-LINKED", moi):
+            updated_moi = 'monoallelic'
+        elif re.search(r"^BOTH", moi):
+            updated_moi = 'both_monoallelic_and_biallelic'
+        else:
+            updated_moi = 'monoallelic'
 
-    return new_dict
+        updated_gene_dict[gene]['mode_of_inheritance'] = updated_moi
+
+    return updated_gene_dict
 
 
-def get_formatted_dict(panel_id):
+def get_formatted_dict(panel_string, genepanels_file_id, panelapp_file_id):
     """
     Main function to get a simple dictionary for each panel
 
@@ -197,10 +128,19 @@ def get_formatted_dict(panel_id):
     _type_
         _description_
     """
-    mappings = read_in_mappings()
-    panel_data = get_panel_data(panel_id)
-    genes, regions = get_gene_region_info(panel_data)
-    panel_as_dict = format_panel_info_as_dict(genes, regions)
-    final_dict = map_moi_to_simpler_terms(panel_as_dict, mappings)
+    #test_codes = parse_R_code(panel_string)
 
-    return final_dict
+    # Get each panel and its PanelApp ID as a dict
+    genepanels_dict = parse_genepanels(genepanels_file_id)
+    # Get the PanelApp ID for our panel(s) of interest
+    panel_id = get_panel_id_from_genepanels(panel_string, genepanels_dict)
+    # Read in the PanelApp JSON dump
+    panel_dump = read_in_json_from_dnanexus(panelapp_file_id)
+    # Parse the PanelApp dump to get all the info for our panel(s)
+    panel_dict = parse_panelapp_dump(panel_id, panel_dump)
+    # Get the gene and region info from the panel and format as dict
+    panel_of_interest = format_panel_info(panel_dict)
+    #final_dict = map_moi_to_simpler_terms(panel_of_interest, mappings)
+    final_panel_dict = simplify_MOI_terms(panel_of_interest)
+
+    return final_panel_dict

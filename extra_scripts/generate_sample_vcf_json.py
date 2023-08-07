@@ -3,9 +3,7 @@ Get only one VCF file ID per sample, output to JSON and copy those files
 into the testing project
 """
 import dxpy as dx
-import json
-import pandas as pd
-import query_original_vcf as qov
+import utils.utils as utils
 
 from collections import defaultdict
 from pathlib import Path
@@ -13,64 +11,6 @@ from pathlib import Path
 
 # Get path of main dir
 ROOT_DIR = Path(__file__).absolute().parents[1]
-
-# List samples which failed QC on first instance
-SAMPLES_WITH_QC_FAILS = ['GMXXXXXXX', 'GMXXXXXXX', 'GMXXXXXX']
-# Define the project where the above samples failed QC on the first run
-PROJECT_WHERE_FAILED = 'project-G5YPJZj4574zvxkVJqQPvvvY'
-
-
-def read_in_json_file(folder, file_name):
-    """
-    Read in a JSON file
-
-    Returns
-    -------
-    json_dict : dict
-        the JSON converted to a Python dictionary
-    """
-    with open(
-        ROOT_DIR.joinpath(folder, file_name), "r", encoding='utf8'
-    ) as json_file:
-        json_dict = json.load(json_file)
-
-    return json_dict
-
-
-def remove_failed_sample_vcfs(vcf_dict):
-    """
-    Remove three samples which failed QC the first time they were tested
-
-    Parameters
-    ----------
-    vcf_dict : dict
-        dict with GM number as key and list of dicts containing info on
-        VCFs found for that sample
-
-    Returns
-    -------
-    updated_dict : dict
-        the dict as above but with the specific VCFs for the three samples
-        removed if they are found in the project where they failed QC
-    """
-    updated_dict = defaultdict(list)
-
-    for sample, files in vcf_dict.items():
-        # If the sample is one of the three that failed
-        if sample in SAMPLES_WITH_QC_FAILS:
-            # Remove VCF file in specific project because
-            # this is the instance of the sample that failed QC
-            updated_files = [
-                x for x in files if not (
-                    PROJECT_WHERE_FAILED == x.get('project')
-                )
-            ]
-            updated_dict[sample] = updated_files
-        # If not sample that failed QC just take the files as the value
-        else:
-            updated_dict[sample] = files
-
-    return updated_dict
 
 
 def get_only_latest_vcf(modified_vcf_dict):
@@ -137,23 +77,6 @@ def add_testing_outcome(vcf_dict, obesity_df):
     return vcf_dict
 
 
-def write_out_final_json(folder, file_name, sample_vcf_dict):
-    """
-    Write out the final dictionary to a JSON
-    Parameters
-    ----------
-    folder : str
-        name of folder to write the file to
-    file_name : str
-        name of the output JSON file
-    sample_vcf_dict : dict
-        final dict with GM number as key and dict with single VCF and sample
-        info as value
-    """
-    with open(ROOT_DIR.joinpath(folder, file_name), 'w') as fp:
-        json.dump(sample_vcf_dict, fp, indent=4)
-
-
 def copy_files_to_testing_project(vcf_dict, test_project_id):
     """
     Copy the one file per sample to my DNAnexus testing project
@@ -175,19 +98,20 @@ def copy_files_to_testing_project(vcf_dict, test_project_id):
 
 
 def main():
-    obesity_df = qov.read_sample_spreadsheet(
+    obesity_df = utils.read_in_csv(
         'resources', '230609_obesity_no_dups.csv'
     )
-    sample_vcf_dict = read_in_json_file('resources', 'sample_VCF_IDs.json')
-    sample_vcf_updated = remove_failed_sample_vcfs(sample_vcf_dict)
-    vcf_dict = get_only_latest_vcf(sample_vcf_updated)
+    sample_vcf_dict = utils.read_in_json_file(
+        'resources', 'sample_VCF_IDs.json'
+    )
+    vcf_dict = get_only_latest_vcf(sample_vcf_dict)
     final_vcf_dict = add_testing_outcome(vcf_dict, obesity_df)
-    write_out_final_json(
+    utils.write_out_json(
         'resources', 'sample_file_IDs_outcome.json', final_vcf_dict
     )
-    #copy_files_to_testing_project(
-    #     final_vcf_dict, 'project-GVqVPk04p65vjXb2kj6FqFKf'
-    # )
+    copy_files_to_testing_project(
+        final_vcf_dict, 'project-GVqVPk04p65vjXb2kj6FqFKf'
+    )
 
 if __name__ == '__main__':
     main()

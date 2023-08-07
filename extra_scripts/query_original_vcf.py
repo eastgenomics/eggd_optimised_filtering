@@ -6,9 +6,9 @@ sample's GM number (or X number)
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 import dxpy as dx
-import json
 import pandas as pd
 import re
+import file_functions
 import warnings
 
 from collections import defaultdict
@@ -108,33 +108,25 @@ def get_all_vcfs_in_projects(projects_002):
     return vcfs_found
 
 
-def read_sample_spreadsheet(folder, file_name):
+def modify_sample_names(data_frame):
     """
-    Read in spreadsheet containing GM number, outcome and (if positive case)
-    variant(s) of interest
+    Remove '.' from GM sample names in the LABNO column
 
     Parameters
     ----------
-    folder : str
-        name of folder spreadsheet is saved in
-    file_name : _type_
-        name of spreadsheet
+    data_frame: pd.DataFrame
+        dataframe to strip '.' from the LABNO column
 
     Returns
     -------
-    sample_df : pd.DataFrame
-        dataframe containing GM number, outcome and, if pos, variant(s)
-        of interest
+    data_frame : pd.DataFrame
+        dataframe where GM number has '.' removed
     """
-    sample_df = pd.read_csv(
-        ROOT_DIR.joinpath(folder, file_name),
-        delimiter=','
-    )
 
     # Remove '.' from sample name
-    sample_df['LABNO'] = sample_df['LABNO'].str.replace(".", "")
+    data_frame['LABNO'] = data_frame['LABNO'].str.replace(".", "")
 
-    return sample_df
+    return data_frame
 
 
 def get_list_of_gm_numbers(sample_df):
@@ -232,34 +224,30 @@ def add_in_samples_not_found(sample_vcf_dict, gm_numbers):
     return sample_vcf_dict
 
 
-def read_in_x_gm_mapping(folder_name, file_name):
+def create_x_gm_mapping(x_gm_dataframe):
     """
     Creates a mapping of GM number to X number, as VCF file names
     did not have GM number in the name in the past but did have X number
 
     Parameters
     ----------
-    folder_name : str
-        name of the folder the CSV is held containing the mapping
-    file_name : str
-        name of the file of the CSV containing the mapping
+    x_gm_dataframe : pd.DataFrame
+        dataframe containing GM number and corresponding X number
 
     Returns
     -------
     x_gm_dict : dict
         dictionary of GM number key with corresponding X number as value
     """
-    # Read in mapping file exported from Gemini
-    x_gm_mapping = pd.read_csv(
-        ROOT_DIR.joinpath(folder_name, file_name)
-    )
     # Remove the '.' from each GM number
-    x_gm_mapping['LabNumber'] = x_gm_mapping['LabNumber'].str.replace('.', '')
+    x_gm_dataframe['LabNumber'] = x_gm_dataframe['LabNumber'].str.replace(
+        '.', ''
+    )
     # Create a dict of GM number (with GM in capitals) vs X number
     x_gm_dict = dict(
         zip(
-            x_gm_mapping.LabNumber.str.upper(),
-            x_gm_mapping.ExomeNumber
+            x_gm_dataframe.LabNumber.str.upper(),
+            x_gm_dataframe.ExomeNumber
         )
     )
     return x_gm_dict
@@ -362,23 +350,6 @@ def find_vcf_based_on_x_number(sample_vcf_dict, x_gm_dict, all_vcf_objects):
     return sample_vcf_dict
 
 
-def write_out_sample_vcfs_to_json(folder, file_name, dict_to_write) -> None:
-    """
-    Write out the final dictionary to a JSON
-
-    Parameters
-    ----------
-    folder : str
-        folder name of which dir to store the JSON
-    file_name : str
-        file name for the JSON
-    dict_to_write : dict
-        final dict with GM number as key and list of file dict objects as value
-    """
-    with open(ROOT_DIR.joinpath(folder, file_name), 'w') as outfile:
-        json.dump(dict_to_write, outfile, indent=4)
-
-
 def check_files_found(final_sample_vcf_dict) -> None:
 
     samples_where_no_vcf_found = [
@@ -417,19 +388,21 @@ def main():
     )
     # 6021 vcfs in 002 projs
     vcfs_in_projs = get_all_vcfs_in_projects(all_002_project_ids)
-    obesity_df = read_sample_spreadsheet(
+    obesity_df = file_functions.read_in_csv(
         'resources', '230609_obesity_no_dups.csv'
     )
+    obesity_df = modify_sample_names(obesity_df)
     gm_nos = get_list_of_gm_numbers(obesity_df)
     my_vcfs = find_files_by_gm_number(vcfs_in_projs, gm_nos)
     all_sample_vcfs_found = add_in_samples_not_found(my_vcfs, gm_nos)
-    x_gm_dict = read_in_x_gm_mapping(
+    x_gm_mapping = file_functions.read_in_csv(
         'resources', 'obesity_cases_x_gm_mapping.csv'
     )
+    x_gm_dict = create_x_gm_mapping(x_gm_mapping)
     final_sample_vcf_dict = find_vcf_based_on_x_number(
         all_sample_vcfs_found, x_gm_dict, vcfs_in_projs
     )
-    write_out_sample_vcfs_to_json(
+    file_functions.write_out_json(
         'resources', 'sample_VCF_IDs.json', final_sample_vcf_dict
     )
     check_files_found(final_sample_vcf_dict)

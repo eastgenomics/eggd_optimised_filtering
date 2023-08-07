@@ -3,8 +3,8 @@ Script to unarchive the original raw VCF from Sentieon for each sample
 """
 
 import dxpy as dx
-import generate_sample_vcf_json as gsvj
 import time
+import file_functions
 
 
 def unarchive_files(sample_vcf_dict) -> None:
@@ -35,7 +35,7 @@ def unarchive_files(sample_vcf_dict) -> None:
 
 if __name__ == '__main__':
     # Open the JSON containing the file IDs found for each sample
-    original_vcf_IDs = gsvj.read_in_json_file(
+    original_vcf_IDs = file_functions.read_in_json_file(
         "resources", "sample_file_IDs_outcome.json"
     )
     # Unarchive the files
