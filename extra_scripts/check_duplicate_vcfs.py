@@ -1,5 +1,5 @@
 import subprocess
-import utils.utils as utils
+import utils.file_utils as file_utils
 
 from pathlib import Path
 
@@ -48,7 +48,7 @@ def write_out_diff_comparison(original_vcf_IDs) -> None:
                 output_file.write(f"{sample}\n{file_IDs}\n{output}\n\n")
 
 def main():
-    file_IDs_to_check = utils.read_in_json_file(
+    file_IDs_to_check = file_utils.read_in_json_file(
         "resources", "sample_VCF_IDs.json"
     )
     write_out_diff_comparison(file_IDs_to_check)

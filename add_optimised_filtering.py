@@ -8,12 +8,6 @@ from utils import panels
 from utils import file_utils
 
 
-# class Arguments():
-
-#     def __init__(self):
-#         self.args = self.parse_args()
-
-
 def parse_args() -> argparse.Namespace:
     """
     Parse the command line arguments inputs given
@@ -68,6 +62,27 @@ def parse_args() -> argparse.Namespace:
 
 
 def read_in_config(config_file_id):
+    """
+    Read in the info needed for filtering from config JSON
+
+    Parameters
+    ----------
+    config_file_id : str
+        proj:file ID of the config file in DNAnexus
+
+    Returns
+    -------
+    flag_name : str
+        name of the flag to be added
+    panelapp_file : str
+        file ID of the PanelApp dump in DNAnexus
+    genepanels_file : str
+        file ID of the genepanels file in DNAnexus
+    rules : dict
+        dict of the filtering rules for each gene MOI
+    csq_types : list
+        list of variant consequence types we want to keep
+    """
     config_contents = file_utils.read_in_json_from_dnanexus(config_file_id)
     flag_name = config_contents.get('flag_name')
     panelapp_file = config_contents.get('panelapp_file_id')
@@ -85,7 +100,7 @@ def main():
     config = args.config
     whitelist = args.whitelist
     flag_name, panelapp_file, genepanels_file, rules, csq_types = read_in_config(config)
-    #print(flag_name, panelapp_file, genepanels_file, rules, csq_types)
+
     # Create dictionary from the panel
     panel_dict = panels.get_formatted_dict(
         panel_string, genepanels_file, panelapp_file

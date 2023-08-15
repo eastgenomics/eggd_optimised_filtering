@@ -11,9 +11,14 @@ sanitise_shire_output.py
 # TXT file of file comparisons
 *.txt
 
+# Plotting script
+plotting.py
+
 # Excel
 *.xlsx
 *.xls
+*.xlsx#
+*.xls#
 
 # CSV and TSV
 *.csv
