@@ -14,14 +14,6 @@ FIELDS_TO_COLLAPSE = ",".join([
     f"INFO/CSQ_{field}" for field in FIELDS_TO_SPLIT.split(',')
 ])
 
-# class VCF():
-#     def __init__(self, args) -> None:
-#         self.args = args
-#         self.sample_name = None
-
-
-#     def process(self) -> None:
-
 
 def bgzip(file) -> None:
     """
@@ -238,16 +230,6 @@ def add_filtering_flag(
                 variant.info[flag_name] = 'EXCLUDE'
 
     return gene_variant_dict
-
-
-# def rescue_whitelist_variants(gene_variant_dict):
-#     for gene, variant_list in gene_variant_dict.items():
-#         for variant in variant_list:
-#             print(variant.start)
-#             print(variant.end)
-#             print(variant.ref)
-#             print(variant.alts)
-
 
 
 def write_out_flagged_vcf(flagged_vcf, gene_variant_dict, vcf_contents) -> None:
