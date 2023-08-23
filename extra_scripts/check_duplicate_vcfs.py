@@ -16,6 +16,8 @@ ROOT_DIR = Path(__file__).absolute().parents[1]
 # For each sample, if there are 2 files found
 
 def write_out_diff_comparison(original_vcf_ids):
+    #TODO change this to read in files with dxpy rather than using
+    # subprocess
     """
     Where duplicate VCF files are found for one sample, diff the
     files (excluding the header) to check the same variants are present

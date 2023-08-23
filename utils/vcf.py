@@ -1,3 +1,5 @@
+#TODO Change the majority of filtering to be done with bcftools
+
 import subprocess
 import re
 
@@ -223,20 +225,21 @@ def add_filtering_flag(
         # Get genotypes of all the variants in that gene which pass
         # consequence types and AF filters for that MOI
         gtypes = [
-            '/'.join(
-                [str(element) for element in variant.samples[sample_name]['GT']]
-            ) for variant in variants_passing_af_csq_filters
+            [genotype for genotype in variant.samples[sample_name]['GT']]
+            for variant in variants_passing_af_csq_filters
         ]
+        # Create list of a count for each variant
+        gt_counts = [genotype.count(1) for genotype in gtypes]
+        count_het_homs = Counter(gt_counts)
 
         # Get number of hets and homs needed for the gene's MOI
         hets_needed = rules[gene_moi]['HET']
         homs_needed = rules[gene_moi]['HOM']
 
-        # Count how many het and hom variants there are which pass filters
-        # for that gene
-        gt_counts = Counter(gtypes)
-        het_count = gt_counts.get('1/0', 0) + gt_counts.get('0/1', 0)
-        hom_count = gt_counts.get('1/1', 0)
+        # Count how many het (1) and hom (2) variants there are which pass
+        # filters for that gene
+        het_count = count_het_homs.get(1, 0)
+        hom_count = count_het_homs.get(2, 0)
 
         # If either enough hets or enough homs then add our PRIORITY flag
         if ((het_count >= hets_needed) or (hom_count >= homs_needed)):

@@ -148,6 +148,7 @@ def get_list_of_gm_numbers(sample_df):
 
 
 def find_files_by_gm_number(list_of_vcf_file_objs, gm_numbers):
+    #TODO compare two dicts by key (make list_of_vcf_file_objs filename as key) # rather than looping over twice
     """
     Create a dictionary of GM number key and value is list all of VCF
     objects found for that sample
@@ -194,6 +195,8 @@ def find_files_by_gm_number(list_of_vcf_file_objs, gm_numbers):
 
 
 def add_in_samples_not_found(sample_vcf_dict, gm_numbers):
+    #TODO Initialise dict from gm_numbers list with empty list as value above
+    # so this function isn't needed
     """
     Adds empty list for samples where no VCF was found
 
@@ -382,7 +385,6 @@ def main():
         "201029_K00178_0294_BHK737BBXY_clinicalgenetics_repeat"
         )
     )
-    # 6021 vcfs in 002 projs
     vcfs_in_projs = get_all_vcfs_in_projects(all_002_project_ids)
     obesity_df = file_utils.read_in_csv(
         'resources', '230609_obesity_no_dups.csv'
