@@ -3,10 +3,11 @@ Get only one VCF file ID per sample, output to JSON and copy those files
 into the testing project
 """
 import dxpy as dx
-import utils.file_utils as file_utils
 
 from collections import defaultdict
 from pathlib import Path
+
+from utils import file_utils
 
 
 # Get path of main dir
@@ -48,7 +49,7 @@ def get_only_latest_vcf(modified_vcf_dict):
     return final_dict
 
 
-def add_testing_outcome(vcf_dict, obesity_df):
+def add_testing_outcome(vcf_dict, outcome_df):
     """
     Add in the testing outcome for the sample
 
@@ -57,7 +58,7 @@ def add_testing_outcome(vcf_dict, obesity_df):
     vcf_dict : dict
         dict with sample as key and value is a dict of the one VCF for
         that sample
-    obesity_df : pd.DataFrame
+    outcome_df : pd.DataFrame
         pandas df of each sample and testing outcome and (if relevant)
         the variant(s) found
 
@@ -69,8 +70,8 @@ def add_testing_outcome(vcf_dict, obesity_df):
     """
     for sample, _ in vcf_dict.items():
         # Get the report outcome from the dataframe based on the GM no
-        report_outcome = obesity_df.loc[
-            obesity_df['LABNO'] == sample, 'REPORT_TYPE'
+        report_outcome = outcome_df.loc[
+            outcome_df['LABNO'] == sample, 'REPORT_TYPE'
         ].item()
         vcf_dict[sample]['report_outcome'] = report_outcome
 
@@ -98,14 +99,14 @@ def copy_files_to_testing_project(vcf_dict, test_project_id):
 
 
 def main():
-    obesity_df = file_utils.read_in_csv(
+    outcome_df = file_utils.read_in_csv(
         'resources', '230609_obesity_no_dups.csv'
     )
     sample_vcf_dict = file_utils.read_in_json_from_local_file(
         'resources', 'sample_VCF_IDs.json'
     )
     vcf_dict = get_only_latest_vcf(sample_vcf_dict)
-    final_vcf_dict = add_testing_outcome(vcf_dict, obesity_df)
+    final_vcf_dict = add_testing_outcome(vcf_dict, outcome_df)
     file_utils.write_out_json(
         'resources', 'sample_file_IDs_outcome.json', final_vcf_dict
     )

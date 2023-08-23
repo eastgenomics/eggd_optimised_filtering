@@ -77,9 +77,8 @@ def read_in_csv(folder, file_name):
 
     Returns
     -------
-    my_df : pd.DataFrame
+    pd.DataFrame
         CSV converted to pandas dataframe table
     """
-    my_df = pd.read_csv(ROOT_DIR.joinpath(folder, file_name))
 
-    return my_df
+    return pd.read_csv(ROOT_DIR.joinpath(folder, file_name))

@@ -34,7 +34,7 @@ def parse_args() -> argparse.Namespace:
     # Add CLI input of clinical indication string
     parser.add_argument(
         '-p',
-        '--panelapp_string',
+        '--panel_string',
         type=str,
         required=True,
         help='String containing the panel(s) of interest, comma separated'
@@ -84,28 +84,22 @@ def read_in_config(config_file_id):
         list of variant consequence types we want to keep
     """
     config_contents = file_utils.read_in_json_from_dnanexus(config_file_id)
-    flag_name = config_contents.get('flag_name')
-    panelapp_file = config_contents.get('panelapp_file_id')
-    genepanels_file = config_contents.get('genepanels_file_id')
-    rules = config_contents.get('filtering_rules')
-    csq_types = config_contents.get('csq_types')
 
-    return flag_name, panelapp_file, genepanels_file, rules, csq_types
+    return list(map(config_contents.get, [
+        'flag_name', 'panelapp_file_id', 'genepanels_file_id',
+        'filtering_rules', 'csq_types'
+    ]))
 
 
 def main():
     args = parse_args()
-    input_vcf = args.input_vcf
-    panel_string = args.panelapp_string
-    config = args.config
-    whitelist = args.whitelist
-    flag_name, panelapp_file, genepanels_file, rules, csq_types = read_in_config(config)
+    flag_name, panelapp_file, genepanels_file, rules, csq_types = read_in_config(args.config)
 
     # Create dictionary from the panel
     panel_dict = panels.get_formatted_dict(
-        panel_string, genepanels_file, panelapp_file
+        args.panel_string, genepanels_file, panelapp_file
     )
-    vcf.add_annotation(flag_name, rules, csq_types, input_vcf, panel_dict)
+    vcf.add_annotation(flag_name, rules, csq_types, args.input_vcf, panel_dict)
 
 
 if __name__ == "__main__":

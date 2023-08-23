@@ -5,13 +5,18 @@ from collections import defaultdict, Counter
 from pathlib import Path
 from pysam import VariantFile
 
+
 # Get path of parent directory
 ROOT_DIR = Path(__file__).absolute().parents[1]
 
-FIELDS_TO_SPLIT = 'SYMBOL,Consequence,gnomADe_AF,gnomADg_AF,TWE_AF,ClinVar_CLNSIG,ClinVar_CLNSIGCONF,SpliceAI_pred_DS_AG,SpliceAI_pred_DS_AL,SpliceAI_pred_DS_DG,SpliceAI_pred_DS_DL'
+FIELDS_TO_SPLIT = [
+    'SYMBOL', 'Consequence', 'gnomADe_AF', 'gnomADg_AF', 'TWE_AF',
+    'ClinVar_CLNSIG', 'ClinVar_CLNSIGCONF', 'SpliceAI_pred_DS_AG',
+    'SpliceAI_pred_DS_AL', 'SpliceAI_pred_DS_DG', 'SpliceAI_pred_DS_DL'
+]
 
 FIELDS_TO_COLLAPSE = ",".join([
-    f"INFO/CSQ_{field}" for field in FIELDS_TO_SPLIT.split(',')
+    f"INFO/CSQ_{field}" for field in FIELDS_TO_SPLIT
 ])
 
 
@@ -77,7 +82,7 @@ def bcftools_pre_process(input_vcf) -> str:
     # Split out the SYMBOL, Consequence, gnomADe_AF fields from the CSQ
     # string and name them with 'CSQ_{field}' as separate INFO fields
     cmd = (
-        f"bcftools +split-vep -c {FIELDS_TO_SPLIT} -Ou -p 'CSQ_'"
+        f"bcftools +split-vep -c {','.join(FIELDS_TO_SPLIT)} -Ou -p 'CSQ_'"
         f" -d {input_vcf} -o {output_vcf}"
     )
 
@@ -106,7 +111,8 @@ def bcftools_pre_process(input_vcf) -> str:
 
 def read_in_vcf(split_vcf_gz, flag_name):
     """
-    Read in the VCF file with the pysam package
+    Read in the VCF file with the pysam package and add a new header line
+    for the optimised filtering flag
 
     Parameters
     ----------
@@ -117,6 +123,8 @@ def read_in_vcf(split_vcf_gz, flag_name):
     -------
     vcf_contents: pysam VariantFile object
         contents of the VCF file as a pysam object
+    sample_name : str
+        the full name of the sample
     """
     print(f"Reading in the split VCF {split_vcf_gz} with pysam")
 
@@ -127,7 +135,11 @@ def read_in_vcf(split_vcf_gz, flag_name):
     sample_name = list(vcf_contents.header.samples)[0]
 
     # Add in our new flag to VCF header
-    vcf_contents.header.info.add(flag_name, ".", "String", "Filtering flag")
+    vcf_contents.header.info.add(
+        flag_name, ".", "String",
+        "Flag for optimised filtering based on AF thresholds for a gene's "
+        "MOI and zygosity counts"
+    )
 
     return vcf_contents, sample_name
 
@@ -197,7 +209,13 @@ def add_filtering_flag(
             if not clinvar_conf:
                 clinvar_conf = ''
 
-            if (((exome_af < af_threshold) and any(x in consequences for x in csq_types) and (twe_af < 0.05)) or ((re.search(r'pathogenic', clinvar_conf, re.IGNORECASE) or any(splice_scores) >= 0.2))):
+            if (
+                (exome_af < af_threshold
+                 and any(x in consequences for x in csq_types)
+                 and twe_af < 0.05)
+                or re.search(r'pathogenic', clinvar_conf, re.IGNORECASE)
+                or any(splice_score >= 0.2 for splice_score in splice_scores)
+            ):
                 variants_passing_af_csq_filters.append(variant)
             else:
                 variant.info[flag_name] = 'EXCLUDE'
@@ -232,7 +250,7 @@ def add_filtering_flag(
     return gene_variant_dict
 
 
-def write_out_flagged_vcf(flagged_vcf, gene_variant_dict, vcf_contents) -> None:
+def write_out_flagged_vcf(flagged_vcf, gene_variant_dict, vcf_contents):
     """
     Write out each record to VCF using pysam
 
@@ -306,7 +324,22 @@ def bcftools_remove_csq_annotation(input_vcf):
 
 
 def add_annotation(flag_name, rules, csq_types, input_vcf, panel_dict):
-    # Split and bgzip the annotated VCF
+    """
+    Main function to take a VCF and add the flags required for filtering
+
+    Parameters
+    ----------
+    flag_name : str
+        Name of the flag to add in
+    rules : dict
+        dict of the filtering rules for each of the inheritance types
+    csq_types : list
+        list of consequence types for variants we want to keep
+    input_vcf : str
+        name of the input VCF
+    panel_dict : dict
+        default dict with each gene on panel as key and the gene info as val
+    """
     split_vcf = f"{Path(input_vcf).stem}.split.vcf"
     flagged_vcf = f"{Path(input_vcf).stem}.flagged.vcf"
 
@@ -317,7 +350,6 @@ def add_annotation(flag_name, rules, csq_types, input_vcf, panel_dict):
     gene_var_dict = add_filtering_flag(
         sample_name, vcf_contents, panel_dict, rules, csq_types, flag_name
     )
-    #rescue_whitelist_variants(gene_var_dict)
     write_out_flagged_vcf(flagged_vcf, gene_var_dict, vcf_contents)
     final_vcf = bcftools_remove_csq_annotation(flagged_vcf)
     bgzip(final_vcf)

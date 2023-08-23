@@ -1,7 +1,11 @@
-import subprocess
-import utils.file_utils as file_utils
-
+"""
+This script compares the variants where duplicate VCFs exist so we can
+decide how to choose one VCF per sample
+"""
 from pathlib import Path
+import subprocess
+
+from utils import file_utils
 
 
 # Get the path to the main directory
@@ -11,7 +15,7 @@ ROOT_DIR = Path(__file__).absolute().parents[1]
 # Open file that we can append results of diff to
 # For each sample, if there are 2 files found
 
-def write_out_diff_comparison(original_vcf_IDs) -> None:
+def write_out_diff_comparison(original_vcf_ids):
     """
     Where duplicate VCF files are found for one sample, diff the
     files (excluding the header) to check the same variants are present
@@ -25,7 +29,7 @@ def write_out_diff_comparison(original_vcf_IDs) -> None:
         ROOT_DIR.joinpath('resources', 'outcome_of_comparisons.txt'), 'a'
     ) as output_file:
         # For each sample, if there are 2 files found
-        for sample, files in original_vcf_IDs.items():
+        for sample, files in original_vcf_ids.items():
             if len(files) == 2:
                 # List the IDs of the two files
                 file_IDs = [file['id'] for file in files]
@@ -48,7 +52,7 @@ def write_out_diff_comparison(original_vcf_IDs) -> None:
                 output_file.write(f"{sample}\n{file_IDs}\n{output}\n\n")
 
 def main():
-    file_IDs_to_check = file_utils.read_in_json_file(
+    file_IDs_to_check = file_utils.read_in_json_from_local_file(
         "resources", "sample_VCF_IDs.json"
     )
     write_out_diff_comparison(file_IDs_to_check)

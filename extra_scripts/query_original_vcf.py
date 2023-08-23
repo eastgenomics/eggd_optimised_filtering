@@ -2,19 +2,17 @@
 Script to find the original VCF(s) outputted from Sentieon based on a
 sample's GM number (or X number)
 """
-
-import warnings
-warnings.simplefilter(action='ignore', category=FutureWarning)
 import dxpy as dx
-import pandas as pd
 import re
-import file_functions
 import warnings
 
 from collections import defaultdict
 from pathlib import Path
 
+import utils.file_utils as file_utils
 
+
+warnings.simplefilter(action='ignore', category=FutureWarning)
 # Get path one directory above this file
 ROOT_DIR = Path(__file__).absolute().parents[1]
 
@@ -123,7 +121,6 @@ def modify_sample_names(data_frame):
         dataframe where GM number has '.' removed
     """
 
-    # Remove '.' from sample name
     data_frame['LABNO'] = data_frame['LABNO'].str.replace(".", "")
 
     return data_frame
@@ -145,7 +142,6 @@ def get_list_of_gm_numbers(sample_df):
         list of all the sample GM numbers
     """
 
-    # Get GM numbers column as a list
     gm_numbers = sample_df['LABNO'].tolist()
 
     return gm_numbers
@@ -388,21 +384,21 @@ def main():
     )
     # 6021 vcfs in 002 projs
     vcfs_in_projs = get_all_vcfs_in_projects(all_002_project_ids)
-    obesity_df = file_functions.read_in_csv(
+    obesity_df = file_utils.read_in_csv(
         'resources', '230609_obesity_no_dups.csv'
     )
     obesity_df = modify_sample_names(obesity_df)
     gm_nos = get_list_of_gm_numbers(obesity_df)
     my_vcfs = find_files_by_gm_number(vcfs_in_projs, gm_nos)
     all_sample_vcfs_found = add_in_samples_not_found(my_vcfs, gm_nos)
-    x_gm_mapping = file_functions.read_in_csv(
+    x_gm_mapping = file_utils.read_in_csv(
         'resources', 'obesity_cases_x_gm_mapping.csv'
     )
     x_gm_dict = create_x_gm_mapping(x_gm_mapping)
     final_sample_vcf_dict = find_vcf_based_on_x_number(
         all_sample_vcfs_found, x_gm_dict, vcfs_in_projs
     )
-    file_functions.write_out_json(
+    file_utils.write_out_json(
         'resources', 'sample_VCF_IDs.json', final_sample_vcf_dict
     )
     check_files_found(final_sample_vcf_dict)

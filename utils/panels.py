@@ -54,7 +54,12 @@ def get_panel_id_from_genepanels(panel_string, genepanels_dict) -> str:
         ID of the panel of interest, e.g. '130'
     """
     panel_set = genepanels_dict.get(panel_string)
-    panel_id = [p_id for p_id in panel_set][0]
+    try:
+        panel_id = [p_id for p_id in panel_set][0]
+    except Exception as err:
+        raise ValueError(
+            f"The panel ID does not exist in the genepanels file: {err}"
+        )
 
     return panel_id
 
@@ -67,17 +72,21 @@ def parse_panelapp_dump(panel_id, panelapp_dump):
     ----------
     panel_id : str
         PanelApp ID of the panel
-    panelapp_dump : dict
-        dict of the PanelApp dump
+    panelapp_dump : list
+        PanelApp dump as list of dicts of each panel
 
     Returns
     -------
-    _type_
-        _description_
+    my_panel : dict
+        dict of all the info for a particular panel
     """
-    my_panel = [
-        item for item in panelapp_dump if item['external_id'] == panel_id
-    ][0]
+    try:
+        my_panel = [
+            item for item in panelapp_dump if item['external_id'] == panel_id
+        ][0]
+    except Exception as err:
+        raise ValueError(
+            f"The panel ID does not exist in the PanelApp JSON: {err}")
 
     return my_panel
 
@@ -149,7 +158,7 @@ def simplify_MOI_terms(panel_dict) -> dict:
         elif re.search(r"^BOTH", moi):
             updated_moi = 'both_monoallelic_and_biallelic'
         else:
-            updated_moi = 'monoallelic'
+            updated_moi = 'standard_filtering'
 
         updated_gene_dict[gene]['mode_of_inheritance'] = updated_moi
 
@@ -174,19 +183,13 @@ def get_formatted_dict(panel_string, genepanels_file_id, panelapp_file_id):
     final_panel_dict : dict
         default dict with each gene on the panel as key and the gene info as val
     """
-    #test_codes = parse_R_code(panel_string)
-
-    # Get each panel and its PanelApp ID as a dict
+    # Call functions to get PanelApp data from dump for given panel
+    # and parse out the gene and region info
     genepanels_dict = parse_genepanels(genepanels_file_id)
-    # Get the PanelApp ID for our panel(s) of interest
     panel_id = get_panel_id_from_genepanels(panel_string, genepanels_dict)
-    # Read in the PanelApp JSON dump
     panel_dump = read_in_json_from_dnanexus(panelapp_file_id)
-    # Parse the PanelApp dump to get all the info for our panel(s)
     panel_dict = parse_panelapp_dump(panel_id, panel_dump)
-    # Get the gene and region info from the panel and format as dict
     panel_of_interest = format_panel_info(panel_dict)
-    #final_dict = map_moi_to_simpler_terms(panel_of_interest, mappings)
     final_panel_dict = simplify_MOI_terms(panel_of_interest)
 
     return final_panel_dict

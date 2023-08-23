@@ -4,8 +4,8 @@ Script to unarchive the original raw VCF from Sentieon for each sample
 
 import dxpy as dx
 import time
-import file_functions
 
+from utils import file_utils
 
 def unarchive_files(sample_vcf_dict) -> None:
     """
@@ -18,24 +18,23 @@ def unarchive_files(sample_vcf_dict) -> None:
         as the value containing info all of the original VCFs found
         for that sample
     """
-    # For each set of files for each sample
-    # For each file in the set of files found
-    for file in sample_vcf_dict.values():
+    archived = {
+        k: v for k, v in sample_vcf_dict.items()
+        if v.get('archive') != 'live' and v.get('id')
+    }
+
+    for idx, file in enumerate(archived.values()):
+        print(f"Checking file {idx + 1}/{len(archived.values())}")
         file_id = file.get('id')
-        if file_id:
-            proj_id = file['project']
-            file_id = file['id']
-            archive_state = file['archive']
-            # If the file state isn't live, unarchive the file
-            if archive_state != 'live':
-                file_object = dx.DXFile(file_id, project=proj_id)
-                file_object.unarchive()
-                time.sleep(5)
+        proj_id = file.get('project')
+        file_object = dx.DXFile(file_id, project=proj_id)
+        file_object.unarchive()
+        time.sleep(5)
 
 
 if __name__ == '__main__':
     # Open the JSON containing the file IDs found for each sample
-    original_vcf_IDs = file_functions.read_in_json_file(
+    original_vcf_IDs = file_utils.read_in_json_from_local_file(
         "resources", "sample_file_IDs_outcome.json"
     )
     # Unarchive the files
