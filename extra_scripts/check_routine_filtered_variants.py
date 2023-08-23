@@ -50,8 +50,9 @@ def get_number_of_routine_variants():
 
     Returns
     -------
-    _type_
-        _description_
+    x_number_list : list
+        list of lists containing each x number and number of variants
+        provided with routine filters
     """
     with open(
         ROOT_DIR.joinpath('resources', 'total_included_variants.txt')
@@ -86,6 +87,14 @@ def create_merged_df(x_number_list, sample_dict):
     ----------
     x_number_list : list
         list with X number and number of routine filtered variants
+    sample_dict : dict
+        dict with GM numbers as keys and info about VCF found as value
+
+    Returns
+    -------
+    merged_df : pd.DataFrame
+        dataframe with row for each sample containing GM number, X number,
+        report outcome and no. of variants which would be returned routinely
     """
     var_number_df = pd.DataFrame(
         x_number_list, columns=['x_number', 'routine_filter_variants']
@@ -106,7 +115,7 @@ def create_merged_df(x_number_list, sample_dict):
     merged_df = merged_df.rename(columns={"index": "gm_number"})
 
     # Write to CSV
-    #merged_df.to_csv('variants_with_routine_filters.csv', index=False)
+    merged_df.to_csv('variants_with_routine_filters.csv', index=False)
 
     return merged_df
 
