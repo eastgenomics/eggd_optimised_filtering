@@ -10,9 +10,9 @@ The flag values which could be added to a variant:
 - `PRIORITISED`: The variant passes filtering
 - `NOT_PRIORITISED`: The variant does not pass filtering
 - `NOT_ASSESSED`: The variant has not been assessed, either because:
- - The gene could not be found in the PanelApp dump
- - The gene's mode of inheritance could not be found
- - An AF threshold for the specific mode of inheritance could not be found in the config file
+    - The gene could not be found in the PanelApp dump
+    - The gene's mode of inheritance could not be found
+    - An AF threshold for the specific mode of inheritance could not be found in the config file
 
 If the variant is not prioritised, the reason will be added to the `Filter_reason` INFO field.
 
@@ -22,7 +22,7 @@ Optimised filtering uses:
 
 ## Requirements
 - bcftools
- - bcftools +split-vep
+    - bcftools +split-vep
 
 A config JSON file is required, which is given as an argument to the tool as a DNAnexus file ID: Example config:
 
@@ -70,7 +70,7 @@ arguments:
 ```
 
 
-For example:
+Example:
 ```
 python3 add_optimised_filtering.py \
 -i X123456_markdup_recalibrated_Haplotyper_annotated.vcf.gz \
