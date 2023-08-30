@@ -1,12 +1,12 @@
 # optimised_filtering
-Optimised filtering is a tool used to add a flag to variants which:
+Optimised filtering is a tool used to add a flag to indicate variants which:
 - Pass standard filtering with bcftools
-- Are within gnomAD AF thresholds based on the gene's MOI (from PanelApp)
+- Do not exceed gnomAD AF thresholds based on the gene's MOI (from PanelApp)
 - Fit the required zygosity counts (of those passing AF thresholds based on the gene's MOI)
  - E.g. a biallelic gene requires at least 1 homozygous variant or at least 2 heterozygous variants
 
 ## Description
-A flag which might be given to a variant:
+The flag values which could be added to a variant:
 - `PRIORITISED`: The variant passes filtering
 - `NOT_PRIORITISED`: The variant does not pass filtering
 - `NOT_ASSESSED`: The variant has not been assessed, either because:
@@ -56,15 +56,19 @@ A config JSON file is required, which is given as an argument to the tool as a D
 ```
 
 ## Usage
-The tool takes a VCF which has been annotated with VEP, and produces a VCF with two additional INFO fields. These are the name of your flag (as specified in the config) and the `Filter_reason`.
-The tool can be run as follows:
+The tool takes a VCF which has been annotated with VEP and produces a VCF with the two additional INFO fields specified above. The tool can be run as follows:
+
 ```
-python3 add_optimised_filtering.py \
--i <vcf> -c <config-file-id> \
--p <panel_string> \
--g <genepanels-file-id> \
--d <panelapp-dump-file-id>
+usage: add_optimised_filtering.py {ARGUMENTS}
+
+arguments:
+ --input_vcf/-i [str]        Path to the input annotated VCF
+ --config/-c [str]           DNAnexus file ID of config file containing filtering rules
+ --panel_string/-p [str]     The panel(s) the patient is being tested for
+ --genepanels/-g [str]       DNAnexus file ID of the genepanels file containing panel ID
+ --panel_dump/-d [str]       DNAnexus file ID of a dump from PanelApp in JSON format
 ```
+
 
 For example:
 ```
