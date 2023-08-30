@@ -234,7 +234,7 @@ def add_filtering_flag(
         variants_passing_af_filter = []
         for variant in variant_list:
             if variant.filter.keys()[0] == 'PASS':
-                if (gene_present) and (gene_moi) and (af_threshold):
+                if all([gene_present, gene_moi, af_threshold]):
 
                     exome_af = variant.info['CSQ_gnomADe_AF'][0]
                     genome_af = variant.info['CSQ_gnomADg_AF'][0]
@@ -264,6 +264,13 @@ def add_filtering_flag(
                 [genotype for genotype in variant.samples[sample_name]['GT']]
                 for variant in variants_passing_af_filter
             ]
+
+            # Check no presence of GT including 2 or above to ensure
+            # multiallelics have been decomposed
+            assert all([all(x < 2 for x in gtype) for gtype in gtypes]), (
+                "Multiallelic variants have not been decomposed"
+            )
+
             # Create list of a count of 1 for each variant
             gt_counts = [genotype.count(1) for genotype in gtypes]
             count_het_homs = Counter(gt_counts)
@@ -397,6 +404,6 @@ def add_annotation(
     final_vcf = bcftools_remove_csq_annotation(flagged_vcf)
     bgzip(final_vcf)
     os.remove(split_vcf)
-    os.remove(filter_vcf)
+    #os.remove(filter_vcf)
     os.remove(flagged_vcf)
     os.remove(final_vcf)

@@ -99,6 +99,5 @@ def unescape_bcftools_command(bcftools_filter_command):
     unescaped_command : str
         full unescaped bcftools filter command
     """
-    unescaped_command = json.loads(json.dumps(bcftools_filter_command))
 
-    return unescaped_command
+    return json.loads(json.dumps(bcftools_filter_command))
