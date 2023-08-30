@@ -63,10 +63,10 @@ usage: add_optimised_filtering.py {ARGUMENTS}
 
 arguments:
  --input_vcf/-i [str]        Path to the input annotated VCF
- --config/-c [str]           DNAnexus file ID of config file containing filtering rules
+ --config/-c [str]           Path to the config file
  --panel_string/-p [str]     The panel(s) the patient is being tested for
- --genepanels/-g [str]       DNAnexus file ID of the genepanels file containing panel ID
- --panel_dump/-d [str]       DNAnexus file ID of a dump from PanelApp in JSON format
+ --genepanels/-g [str]       Path to the genepanels file containing panel IDs
+ --panel_dump/-d [str]       Path to the dump from PanelApp in JSON format
 ```
 
 
@@ -74,8 +74,8 @@ Example:
 ```
 python3 add_optimised_filtering.py \
 -i X123456_markdup_recalibrated_Haplotyper_annotated.vcf.gz \
--c project-GVqVPk04p65vjXb2kj6FqFKf:file-GYfv8V84p65bxXp1G8k5g44j \
+-c filter_config.json \
 -p 'R149.1_Severe early-onset obesity_P' \
--g project-GVqVPk04p65vjXb2kj6FqFKf:file-GY4QyKj4p65jx1xJqZKXBV79 \
--d project-GVqVPk04p65vjXb2kj6FqFKf:file-GY4QxJ04p65zJf3937y01XBP
+-g 230602_gp_panelapp_id.tsv \
+-d 230726_panelapp_dump.json
 ```
