@@ -6,6 +6,14 @@ Optimised filtering is a tool used to add a flag to variants which:
  - E.g. a biallelic gene requires at least 1 homozygous variant or at least 2 heterozygous variants
 
 ## Description
+A flag which might be given to a variant:
+- `PRIORITISED`: The variant passes filtering
+- `NOT_PRIORITISED`: The variant does not pass filtering
+- `NOT_ASSESSED`: The variant has not been assessed, either because:
+ - The gene could not be found in the PanelApp dump
+ - The gene's mode of inheritance could not be found
+ - An AF threshold for the specific mode of inheritance could not be found in the config file
+
 Optimised filtering uses:
 - [bcftools](https://samtools.github.io/bcftools/bcftools.html, "bcftools website")
 - [pysam](https://pysam.readthedocs.io/en/latest/, "pysam documentation")
@@ -46,4 +54,21 @@ A config JSON file is required, which is given as an argument to the tool as a D
 ```
 
 ## Usage
-`python3 add_optimised_filtering.py -i <vcf> -c <config-file-id> -p <panel_string> -g <genepanels-file-id> -d <panelapp-dump-file-id>`
+The tool can be run as follows:
+```
+python3 add_optimised_filtering.py \
+-i <vcf> -c <config-file-id> \
+-p <panel_string> \
+-g <genepanels-file-id> \
+-d <panelapp-dump-file-id>
+```
+
+For example:
+```
+python3 add_optimised_filtering.py \
+-i X123456_markdup_recalibrated_Haplotyper_annotated.vcf.gz \
+-c project-GVqVPk04p65vjXb2kj6FqFKf:file-GYfv8V84p65bxXp1G8k5g44j \
+-p 'R149.1_Severe early-onset obesity_P' \
+-g project-GVqVPk04p65vjXb2kj6FqFKf:file-GY4QyKj4p65jx1xJqZKXBV79 \
+-d project-GVqVPk04p65vjXb2kj6FqFKf:file-GY4QxJ04p65zJf3937y01XBP
+```
