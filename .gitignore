@@ -11,8 +11,14 @@ sanitise_shire_output.py
 # TXT file of file comparisons
 *.txt
 
-# Plotting script
+# Scripts
 plotting.py
+add_routine_filter_variants_to_excel.py
+
+# Folders
+routine_filtered/
+optimised_filtered/
+optimised_filtered_split/
 
 # Excel
 *.xlsx

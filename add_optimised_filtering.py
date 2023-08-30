@@ -80,26 +80,32 @@ def read_in_config(config_file_id):
         file ID of the genepanels file in DNAnexus
     rules : dict
         dict of the filtering rules for each gene MOI
-    csq_types : list
-        list of variant consequence types we want to keep
+    bcftools_filter_string : str
+        bcftools command as a string
     """
     config_contents = file_utils.read_in_json_from_dnanexus(config_file_id)
 
     return list(map(config_contents.get, [
         'flag_name', 'panelapp_file_id', 'genepanels_file_id',
-        'filtering_rules', 'csq_types'
+        'filtering_rules', 'bcftools_filter_string'
     ]))
 
 
 def main():
     args = parse_args()
-    flag_name, panelapp_file, genepanels_file, rules, csq_types = read_in_config(args.config)
-
-    # Create dictionary from the panel
+    (
+        flag_name, panelapp_file, genepanels_file, rules, filter_string
+    ) = read_in_config(args.config)
+    bcftools_filter_command = file_utils.unescape_bcftools_command(
+        filter_string
+    )
     panel_dict = panels.get_formatted_dict(
         args.panel_string, genepanels_file, panelapp_file
     )
-    vcf.add_annotation(flag_name, rules, csq_types, args.input_vcf, panel_dict)
+    vcf.add_annotation(
+        flag_name, rules, args.input_vcf, panel_dict,
+        bcftools_filter_command
+    )
 
 
 if __name__ == "__main__":

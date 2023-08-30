@@ -1,7 +1,5 @@
-#TODO Change the majority of filtering to be done with bcftools
-
+import os
 import subprocess
-import re
 
 from collections import defaultdict, Counter
 from pathlib import Path
@@ -111,7 +109,42 @@ def bcftools_pre_process(input_vcf) -> str:
     return output_vcf
 
 
-def read_in_vcf(split_vcf_gz, flag_name):
+def bcftools_filter(split_vcf, filter_command, filter_vcf):
+    """
+    Filter given VCF using bcftools command provided in config
+
+    Parameters
+    ----------
+    split_vcf : pathlib.PosixPath
+        path to vcf file to filter
+    filter_command : str
+        the full bcftools filter command
+    filter_vcf : str
+        name for output filtered vcf
+
+    Outputs
+    -------
+    filter_vcf : file
+        vcf file with PASS/EXCLUDE added to FILTER columns
+    """
+    command = f"{filter_command} {split_vcf} -o {filter_vcf}"
+
+    print(
+        f"\nFiltering {split_vcf} with the command: \n\t{command}\n"
+    )
+
+    output = subprocess.run(command, shell=True, capture_output=True)
+
+    assert output.returncode == 0, (
+        f"\n\tError in filtering VCF with bcftools\n"
+        f"\n\tVCF: {split_vcf}\n"
+        f"\n\tExitcode:{output.returncode}\n"
+        f"\n\tbcftools filter command used: {filter_command}\n"
+        f"\n\t{output.stderr.decode()}"
+    )
+
+
+def read_in_vcf(filter_vcf, flag_name):
     """
     Read in the VCF file with the pysam package and add a new header line
     for the optimised filtering flag
@@ -128,10 +161,10 @@ def read_in_vcf(split_vcf_gz, flag_name):
     sample_name : str
         the full name of the sample
     """
-    print(f"Reading in the split VCF {split_vcf_gz} with pysam")
+    print(f"Reading in the split VCF {filter_vcf} with pysam")
 
     # Read in and create pysam object of the VCF
-    vcf_contents = VariantFile(split_vcf_gz, 'r')
+    vcf_contents = VariantFile(filter_vcf, 'r')
 
     # Get the name of the sample from the VCF
     sample_name = list(vcf_contents.header.samples)[0]
@@ -143,14 +176,20 @@ def read_in_vcf(split_vcf_gz, flag_name):
         "MOI and zygosity counts"
     )
 
+    # Add the reason the variant was not prioritised as INFO field
+    vcf_contents.header.info.add(
+        "Filter_reason", ".", "String",
+        "Flag explaining why variant has not been prioritised"
+    )
+
     return vcf_contents, sample_name
 
 
 def add_filtering_flag(
-        sample_name, vcf_contents, panel_dict, rules, csq_types, flag_name
+        sample_name, vcf_contents, panel_dict, rules, flag_name
 ) -> dict:
     """
-    Add the flags which will be used for filtering to each variant
+    Add the flags to each variant which will be used for filtering
 
     Parameters
     ----------
@@ -162,8 +201,6 @@ def add_filtering_flag(
         default dict with gene symbol as key and gene info as val
     rules : dict
         dict of the filtering rules for each of the inheritance types
-    csq_types : list
-        list of consequence types that we want to keep
     flag_name : str
         name of the info field to add for the flag
 
@@ -173,82 +210,84 @@ def add_filtering_flag(
         dictionary of each gene with all variants in that gene as val
         and all filtering flags added
     """
-    # Add each variant in a gene to a dict with gene as key and list
+    # Add each variant in a gene/entity to a dict, with gene as key and list
     # of variants as value
     gene_variant_dict = defaultdict(list)
     for record in vcf_contents:
         gene = record.info['CSQ_SYMBOL'][0]
         gene_variant_dict[gene].append(record)
 
-    # Get the MOI for that gene
+    # For each gene, check whether certain gene info is available
     for gene, variant_list in gene_variant_dict.items():
-        gene_moi = panel_dict[gene]['mode_of_inheritance']
-        af_threshold = rules[gene_moi]['af']
+        gene_present = gene_moi = af_threshold = False
+        if gene in panel_dict:
+            gene_present = True
+            gene_moi = panel_dict[gene].get('mode_of_inheritance')
+            if gene_moi:
+                if gene_moi in rules:
+                    af_threshold = rules[gene_moi].get('af')
 
-        variants_passing_af_csq_filters = []
+        # Iterate over all of the variants called in that gene
+        # If variant previously passed bcftools filtering and gene present
+        # in our panel_dict and gene_moi and af threshold for that moi
+        # are present, check var passes af_threshold for that MOI
+        variants_passing_af_filter = []
         for variant in variant_list:
-            consequences = variant.info['CSQ_Consequence'][0].split('&')
-            exome_af = variant.info['CSQ_gnomADe_AF'][0]
-            genome_af = variant.info['CSQ_gnomADg_AF'][0]
-            twe_af = variant.info['CSQ_TWE_AF'][0]
-            clinvar_clinsig = variant.info['CSQ_ClinVar_CLNSIG'][0]
-            clinvar_conf = variant.info['CSQ_ClinVar_CLNSIGCONF'][0]
-            splice_ag = variant.info['CSQ_SpliceAI_pred_DS_AG'][0]
-            splice_al = variant.info['CSQ_SpliceAI_pred_DS_AL'][0]
-            splice_dg = variant.info['CSQ_SpliceAI_pred_DS_DG'][0]
-            splice_dl = variant.info['CSQ_SpliceAI_pred_DS_DL'][0]
+            if variant.filter.keys()[0] == 'PASS':
+                if (gene_present) and (gene_moi) and (af_threshold):
 
-            splice_list = [splice_ag, splice_al, splice_dg, splice_dl]
-            splice_scores = [
-                0.0 if score is None else int(score) for score in splice_list
-            ]
-            if not exome_af:
-                exome_af = 0.0
-            if not genome_af:
-                genome_af = 0.0
-            if not twe_af:
-                twe_af = 0.0
-            if not clinvar_conf:
-                clinvar_conf = ''
+                    exome_af = variant.info['CSQ_gnomADe_AF'][0]
+                    genome_af = variant.info['CSQ_gnomADg_AF'][0]
 
-            if (
-                (exome_af < af_threshold
-                 and any(x in consequences for x in csq_types)
-                 and twe_af < 0.05)
-                or re.search(r'pathogenic', clinvar_conf, re.IGNORECASE)
-                or any(splice_score >= 0.2 for splice_score in splice_scores)
-            ):
-                variants_passing_af_csq_filters.append(variant)
+                    if not exome_af:
+                        exome_af = 0.0
+                    if not genome_af:
+                        genome_af = 0.0
+
+                    if (exome_af < af_threshold and genome_af < af_threshold):
+                        variants_passing_af_filter.append(variant)
+                    else:
+                        variant.info[flag_name] = 'NOT_PRIORITISED'
+                        variant.info['Filter_reason'] = (
+                            'gnomAD_AF_exceeds_MOI_threshold'
+                        )
+                else:
+                    variant.info[flag_name] = 'NOT_ASSESSED'
+                    variant.info['Filter_reason'] = 'Gene_info_not_available'
             else:
-                variant.info[flag_name] = 'EXCLUDE'
+                variant.info[flag_name] = 'NOT_PRIORITISED'
+                variant.info['Filter_reason'] = 'BCFtools_filtered'
 
-        # Get genotypes of all the variants in that gene which pass
-        # consequence types and AF filters for that MOI
-        gtypes = [
-            [genotype for genotype in variant.samples[sample_name]['GT']]
-            for variant in variants_passing_af_csq_filters
-        ]
-        # Create list of a count for each variant
-        gt_counts = [genotype.count(1) for genotype in gtypes]
-        count_het_homs = Counter(gt_counts)
+        # If any variants pass filters for the gene's MOI, get genotypes of all
+        if variants_passing_af_filter:
+            gtypes = [
+                [genotype for genotype in variant.samples[sample_name]['GT']]
+                for variant in variants_passing_af_filter
+            ]
+            # Create list of a count of 1 for each variant
+            gt_counts = [genotype.count(1) for genotype in gtypes]
+            count_het_homs = Counter(gt_counts)
 
-        # Get number of hets and homs needed for the gene's MOI
-        hets_needed = rules[gene_moi]['HET']
-        homs_needed = rules[gene_moi]['HOM']
+            # Get number of hets and homs needed for the gene's MOI
+            hets_needed = rules[gene_moi]['HET']
+            homs_needed = rules[gene_moi]['HOM']
 
-        # Count how many het (1) and hom (2) variants there are which pass
-        # filters for that gene
-        het_count = count_het_homs.get(1, 0)
-        hom_count = count_het_homs.get(2, 0)
+            # Count how many het (1) and hom (2) variants there are which pass
+            # filters for that gene
+            het_count = count_het_homs.get(1, 0)
+            hom_count = count_het_homs.get(2, 0)
 
-        # If either enough hets or enough homs then add our PRIORITY flag
-        if ((het_count >= hets_needed) or (hom_count >= homs_needed)):
-            for variant in variants_passing_af_csq_filters:
-                variant.info[flag_name] = 'PRIORITY'
-        # If not enough hets or homs add EXCLUDE flag
-        else:
-            for variant in variants_passing_af_csq_filters:
-                variant.info[flag_name] = 'EXCLUDE'
+            # If either enough hets or enough homs then add our PRIORITISED flag
+            if ((het_count >= hets_needed) or (hom_count >= homs_needed)):
+                for variant in variants_passing_af_filter:
+                    variant.info[flag_name] = 'PRIORITISED'
+            # If not enough hets or homs add NOT_PRIORITISED flag
+            else:
+                for variant in variants_passing_af_filter:
+                    variant.info[flag_name] = 'NOT_PRIORITISED'
+                    variant.info['Filter_reason'] = (
+                        'Zygosity_count_does_not_fit_MOI'
+                    )
 
     return gene_variant_dict
 
@@ -267,7 +306,7 @@ def write_out_flagged_vcf(flagged_vcf, gene_variant_dict, vcf_contents):
     vcf_contents : pysam.VariantFile object
         the contents of the VCF as a pysam object
     """
-    print("Writing out variants to VCF")
+    print(f"Writing out flagged variants to VCF: {flagged_vcf}")
 
     with VariantFile(flagged_vcf, 'w', header=vcf_contents.header) as out_vcf:
         # For each gene, write out each of the variants to the VCF with the flag
@@ -326,7 +365,9 @@ def bcftools_remove_csq_annotation(input_vcf):
     return output_vcf
 
 
-def add_annotation(flag_name, rules, csq_types, input_vcf, panel_dict):
+def add_annotation(
+        flag_name, rules, input_vcf, panel_dict, filter_command
+    ):
     """
     Main function to take a VCF and add the flags required for filtering
 
@@ -336,23 +377,26 @@ def add_annotation(flag_name, rules, csq_types, input_vcf, panel_dict):
         Name of the flag to add in
     rules : dict
         dict of the filtering rules for each of the inheritance types
-    csq_types : list
-        list of consequence types for variants we want to keep
     input_vcf : str
         name of the input VCF
     panel_dict : dict
         default dict with each gene on panel as key and the gene info as val
     """
     split_vcf = f"{Path(input_vcf).stem}.split.vcf"
+    filter_vcf = f"{Path(input_vcf).stem}.filter.vcf"
     flagged_vcf = f"{Path(input_vcf).stem}.flagged.vcf"
 
     bcftools_pre_process(input_vcf)
+    bcftools_filter(split_vcf, filter_command, filter_vcf)
 
-    # Read in the split (and bgzipped) VCF with pysam
-    vcf_contents, sample_name = read_in_vcf(split_vcf, flag_name)
+    vcf_contents, sample_name = read_in_vcf(filter_vcf, flag_name)
     gene_var_dict = add_filtering_flag(
-        sample_name, vcf_contents, panel_dict, rules, csq_types, flag_name
+        sample_name, vcf_contents, panel_dict, rules, flag_name
     )
     write_out_flagged_vcf(flagged_vcf, gene_var_dict, vcf_contents)
     final_vcf = bcftools_remove_csq_annotation(flagged_vcf)
     bgzip(final_vcf)
+    os.remove(split_vcf)
+    os.remove(filter_vcf)
+    os.remove(flagged_vcf)
+    os.remove(final_vcf)

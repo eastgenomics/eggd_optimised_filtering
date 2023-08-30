@@ -72,7 +72,7 @@ def read_in_csv(folder, file_name):
     ----------
     folder : str
         name of folder spreadsheet is saved in
-    file_name : _type_
+    file_name : str
         name of spreadsheet
 
     Returns
@@ -82,3 +82,23 @@ def read_in_csv(folder, file_name):
     """
 
     return pd.read_csv(ROOT_DIR.joinpath(folder, file_name))
+
+
+def unescape_bcftools_command(bcftools_filter_command):
+    """
+    Removes extra backslashes from bcftools filter command because
+    it has to be escaped in the JSON
+
+    Parameters
+    ----------
+    bcftools_filter_command : str
+        full escaped bcftools filter command directly from JSON
+
+    Returns
+    -------
+    unescaped_command : str
+        full unescaped bcftools filter command
+    """
+    unescaped_command = json.loads(json.dumps(bcftools_filter_command))
+
+    return unescaped_command
