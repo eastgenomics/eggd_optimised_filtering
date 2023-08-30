@@ -4,21 +4,21 @@ import re
 from collections import defaultdict
 from pathlib import Path
 
-from .file_utils import read_in_json_from_dnanexus
+from .file_utils import read_in_json
 
 # Get path one directory above this file
 ROOT_DIR = Path(__file__).absolute().parents[1]
 
 
-def parse_genepanels(genepanels_file_id):
+def parse_genepanels(genepanels_file):
     """
     Parse the genepanels file to make a dict mapping clinical indication
     to PanelApp panel ID
 
     Parameters
     ----------
-    genepanels_file_id : str
-        DNAnexus file ID of the genepanels file: 'proj-XYZ:file-XYZ'
+    genepanels_file : str
+        path to genepanels file which includes panel IDs
 
     Returns
     -------
@@ -26,9 +26,8 @@ def parse_genepanels(genepanels_file_id):
         dict containing each clinical ind with the panel ID as val
     """
     panel_data = {}
-    proj_id, file_id = genepanels_file_id.split(":")
 
-    with dx.open_dxfile(file_id, project=proj_id) as gp_file:
+    with open(genepanels_file, encoding="utf-8") as gp_file:
         for line in gp_file:
             panel_id, clin_ind, panel, gene = line.split('\t')
             panel_data.setdefault(clin_ind, set()).add(panel_id)
@@ -86,7 +85,7 @@ def parse_panelapp_dump(panel_id, panelapp_dump):
         ][0]
     except Exception as err:
         raise ValueError(
-            f"The panel ID does not exist in the PanelApp JSON: {err}")
+            f"The panel ID {panel_id} does not exist in PanelApp JSON: {err}")
 
     return my_panel
 
@@ -165,7 +164,7 @@ def simplify_MOI_terms(panel_dict) -> dict:
     return updated_gene_dict
 
 
-def get_formatted_dict(panel_string, genepanels_file_id, panelapp_file_id):
+def get_formatted_dict(panel_string, genepanels_file, panelapp_file_id):
     """
     Main function to get a simple dictionary for each panel
 
@@ -173,10 +172,10 @@ def get_formatted_dict(panel_string, genepanels_file_id, panelapp_file_id):
     ----------
     panel_string : str
         The clinical indication string, including R number
-    genepanels_file_id : str
-        the proj:file id of the genepanels file in DNAnexus
-    panelapp_file_id : str
-        the proj:file id of the panelapp dump JSON in DNAnexus
+    genepanels_file : str
+        path to genepanels file which contains panel IDs
+    panelapp_file : str
+        path to the PanelApp JSON dump
 
     Returns
     -------
@@ -185,9 +184,9 @@ def get_formatted_dict(panel_string, genepanels_file_id, panelapp_file_id):
     """
     # Call functions to get PanelApp data from dump for given panel
     # and parse out the gene and region info
-    genepanels_dict = parse_genepanels(genepanels_file_id)
+    genepanels_dict = parse_genepanels(genepanels_file)
     panel_id = get_panel_id_from_genepanels(panel_string, genepanels_dict)
-    panel_dump = read_in_json_from_dnanexus(panelapp_file_id)
+    panel_dump = read_in_json(panelapp_file_id)
     panel_dict = parse_panelapp_dump(panel_id, panel_dump)
     panel_of_interest = format_panel_info(panel_dict)
     final_panel_dict = simplify_MOI_terms(panel_of_interest)

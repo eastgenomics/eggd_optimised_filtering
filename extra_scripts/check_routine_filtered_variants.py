@@ -1,5 +1,5 @@
 """
-This script creates a CSV for each sample describing the GM number, X number,
+This script creates a CSV for all samples describing the GM number, X number,
 report outcome and the number of variants which would be returned to scientists
 with current routine filtering methods
 """
@@ -59,7 +59,7 @@ def get_number_of_routine_variants():
     ) as f:
         lines = f.readlines()
 
-    stripped = [line.replace("\n"," ").strip() for line in lines]
+    stripped = [line.replace("\n","").strip() for line in lines]
     # Group the two lines together which are the file name and the number of
     # variants
     grouped = [stripped[i:i+2] for i in range(0, len(stripped), 2)]
