@@ -404,6 +404,6 @@ def add_annotation(
     final_vcf = bcftools_remove_csq_annotation(flagged_vcf)
     bgzip(final_vcf)
     os.remove(split_vcf)
-    #os.remove(filter_vcf)
+    os.remove(filter_vcf)
     os.remove(flagged_vcf)
     os.remove(final_vcf)
