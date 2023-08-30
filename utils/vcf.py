@@ -256,7 +256,7 @@ def add_filtering_flag(
                     variant.info['Filter_reason'] = 'Gene_info_not_available'
             else:
                 variant.info[flag_name] = 'NOT_PRIORITISED'
-                variant.info['Filter_reason'] = 'BCFtools_filtered'
+                variant.info['Filter_reason'] = 'bcftools_filtered'
 
         # If any variants pass filters for the gene's MOI, get genotypes of all
         if variants_passing_af_filter:

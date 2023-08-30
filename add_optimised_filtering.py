@@ -49,6 +49,22 @@ def parse_args() -> argparse.Namespace:
     )
 
     parser.add_argument(
+        '-g',
+        '--genepanels',
+        type=str,
+        required=True,
+        help="DNAnexus file ID of genepanels file with panel IDs included"
+    )
+
+    parser.add_argument(
+        '-d',
+        '--panel_dump',
+        type=str,
+        required=True,
+        help="DNAnexus file ID of PanelApp JSON dump"
+    )
+
+    parser.add_argument(
         '-w',
         '--whitelist',
         type=str,
@@ -74,10 +90,6 @@ def read_in_config(config_file_id):
     -------
     flag_name : str
         name of the flag to be added
-    panelapp_file : str
-        file ID of the PanelApp dump in DNAnexus
-    genepanels_file : str
-        file ID of the genepanels file in DNAnexus
     rules : dict
         dict of the filtering rules for each gene MOI
     bcftools_filter_string : str
@@ -86,21 +98,18 @@ def read_in_config(config_file_id):
     config_contents = file_utils.read_in_json_from_dnanexus(config_file_id)
 
     return list(map(config_contents.get, [
-        'flag_name', 'panelapp_file_id', 'genepanels_file_id',
-        'filtering_rules', 'bcftools_filter_string'
+        'flag_name', 'filtering_rules', 'bcftools_filter_string'
     ]))
 
 
 def main():
     args = parse_args()
-    (
-        flag_name, panelapp_file, genepanels_file, rules, filter_string
-    ) = read_in_config(args.config)
+    flag_name, rules, filter_string = read_in_config(args.config)
     bcftools_filter_command = file_utils.unescape_bcftools_command(
         filter_string
     )
     panel_dict = panels.get_formatted_dict(
-        args.panel_string, genepanels_file, panelapp_file
+        args.panel_string, args.genepanels, args.panel_dump
     )
     vcf.add_annotation(
         flag_name, rules, args.input_vcf, panel_dict,
