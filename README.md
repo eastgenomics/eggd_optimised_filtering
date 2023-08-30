@@ -14,6 +14,8 @@ A flag which might be given to a variant:
  - The gene's mode of inheritance could not be found
  - An AF threshold for the specific mode of inheritance could not be found in the config file
 
+If the variant is not prioritised, the reason will be added to the `Filter_reason` INFO field.
+
 Optimised filtering uses:
 - [bcftools](https://samtools.github.io/bcftools/bcftools.html, "bcftools website")
 - [pysam](https://pysam.readthedocs.io/en/latest/, "pysam documentation")
