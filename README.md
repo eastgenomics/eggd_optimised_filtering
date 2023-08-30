@@ -56,6 +56,7 @@ A config JSON file is required, which is given as an argument to the tool as a D
 ```
 
 ## Usage
+The tool takes a VCF which has been annotated with VEP, and produces a VCF with two additional INFO fields. These are the name of your flag (as specified in the config) and the `Filter_reason`.
 The tool can be run as follows:
 ```
 python3 add_optimised_filtering.py \
