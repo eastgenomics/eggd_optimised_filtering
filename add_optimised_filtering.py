@@ -53,7 +53,7 @@ def parse_args() -> argparse.Namespace:
         '--genepanels',
         type=str,
         required=True,
-        help="DNAnexus file ID of genepanels file with panel IDs included"
+        help="genepanels file with panel IDs included"
     )
 
     parser.add_argument(
@@ -61,7 +61,7 @@ def parse_args() -> argparse.Namespace:
         '--panel_dump',
         type=str,
         required=True,
-        help="DNAnexus file ID of PanelApp JSON dump"
+        help="PanelApp JSON dump"
     )
 
     parser.add_argument(
@@ -77,14 +77,14 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def read_in_config(config_file_id):
+def read_in_config(file_path):
     """
-    Read in the info needed for filtering from config JSON
+    Read in the info needed for filtering from JSON config
 
     Parameters
     ----------
-    config_file_id : str
-        proj:file ID of the config file in DNAnexus
+    file_path : str
+        path of the config file
 
     Returns
     -------
@@ -95,7 +95,7 @@ def read_in_config(config_file_id):
     bcftools_filter_string : str
         bcftools command as a string
     """
-    config_contents = file_utils.read_in_json_from_dnanexus(config_file_id)
+    config_contents = file_utils.read_in_json(file_path)
 
     return list(map(config_contents.get, [
         'flag_name', 'filtering_rules', 'bcftools_filter_string'
