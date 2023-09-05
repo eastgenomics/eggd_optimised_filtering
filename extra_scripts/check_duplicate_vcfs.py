@@ -2,20 +2,57 @@
 This script compares the variants where duplicate VCFs exist so we can
 decide how to choose one VCF per sample
 """
-from pathlib import Path
+import argparse
+import os
 import subprocess
+import sys
 
-from utils import file_utils
+sys.path.append(os.path.abspath(
+    os.path.join(os.path.realpath(__file__), '../../')
+))
+
+from utils.file_utils import read_in_json
 
 
-# Get the path to the main directory
-ROOT_DIR = Path(__file__).absolute().parents[1]
+def parse_args() -> argparse.Namespace:
+    """
+    Parse the command line arguments inputs given
+
+    Returns
+    -------
+    args : Namespace
+        Namespace of passed command line argument inputs
+    """
+
+    parser = argparse.ArgumentParser(
+        description='Information necessary to diff VCF files per sample'
+    )
+
+    parser.add_argument(
+        '-i',
+        '--input_json',
+        type=str,
+        required=True,
+        help='JSON file with all of the samples and the VCFs '
+    )
+
+    parser.add_argument(
+        '-o',
+        '--outputfile_name',
+        type=str,
+        required=True,
+        help='Name of output comparison txt file'
+    )
+
+    args = parser.parse_args()
+
+    return args
 
 
 # Open file that we can append results of diff to
 # For each sample, if there are 2 files found
 
-def write_out_diff_comparison(original_vcf_ids):
+def write_out_diff_comparison(output_name, original_vcf_ids):
     #TODO change this to read in files with dxpy rather than using
     # subprocess
     """
@@ -24,12 +61,12 @@ def write_out_diff_comparison(original_vcf_ids):
 
     Parameters
     ----------
+    output_name : str
+        name of comparison output txt file
     original_vcf_IDs : dict
         dict of each GM number as key and a list of the VCFs objs found as val
     """
-    with open(
-        ROOT_DIR.joinpath('resources', 'outcome_of_comparisons.txt'), 'a'
-    ) as output_file:
+    with open(output_name, 'a') as output_file:
         # For each sample, if there are 2 files found
         for sample, files in original_vcf_ids.items():
             if len(files) == 2:
@@ -54,10 +91,9 @@ def write_out_diff_comparison(original_vcf_ids):
                 output_file.write(f"{sample}\n{file_IDs}\n{output}\n\n")
 
 def main():
-    file_IDs_to_check = file_utils.read_in_json_from_local_file(
-        "resources", "sample_VCF_IDs.json"
-    )
-    write_out_diff_comparison(file_IDs_to_check)
+    args = parse_args()
+    file_ids_to_check = read_in_json(args.input_json)
+    write_out_diff_comparison(args.outputfile_name, file_ids_to_check)
 
 
 if __name__ == '__main__':

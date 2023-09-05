@@ -1,14 +1,10 @@
 """
 General functions which are shared between files
 """
-import dxpy as dx
 import json
 import pandas as pd
 
 from pathlib import Path
-
-
-ROOT_DIR = Path(__file__).absolute().parents[1]
 
 
 def read_in_json(file_name):
@@ -30,35 +26,29 @@ def read_in_json(file_name):
     return json_dict
 
 
-def write_out_json(folder, file_name, dict_to_write_out) -> None:
+def write_out_json(file_name, dict_to_write_out) -> None:
     """
     Write out a dictionary to a JSON file
 
     Parameters
     ----------
-    folder : str
-        name of folder to write the file to
     file_name : str
         name of the output JSON file
     dict_to_write_out : dict
         dictionary to write to a JSON
     """
-    with open(
-        ROOT_DIR.joinpath(folder, file_name), 'w', encoding='utf8'
-    ) as fp:
+    with open(file_name, 'w', encoding='utf8') as fp:
         json.dump(dict_to_write_out, fp, indent=4)
 
 
-def read_in_csv(folder, file_name):
+def read_in_csv(file_name):
     """
     Read in spreadsheet to pandas dataframe
 
     Parameters
     ----------
-    folder : str
-        name of folder spreadsheet is saved in
     file_name : str
-        name of spreadsheet
+        name of file to be read in
 
     Returns
     -------
@@ -66,7 +56,7 @@ def read_in_csv(folder, file_name):
         CSV converted to pandas dataframe table
     """
 
-    return pd.read_csv(ROOT_DIR.joinpath(folder, file_name))
+    return pd.read_csv(file_name)
 
 
 def unescape_bcftools_command(bcftools_filter_command):

@@ -13,12 +13,13 @@ sanitise_shire_output.py
 
 # Scripts
 plotting.py
-add_routine_filter_variants_to_excel.py
 
 # Folders
 routine_filtered/
 optimised_filtered/
 optimised_filtered_split/
+optimised_filtered_split_2/
+optimised_filtered_2/
 
 # Excel
 *.xlsx

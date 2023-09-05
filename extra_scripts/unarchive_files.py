@@ -1,11 +1,45 @@
 """
 Script to unarchive the original raw VCF from Sentieon for each sample
 """
-
+import argparse
 import dxpy as dx
+import os
+import sys
 import time
 
-from utils import file_utils
+sys.path.append(os.path.abspath(
+    os.path.join(os.path.realpath(__file__), '../../')
+))
+
+from utils.file_utils import read_in_json
+
+
+def parse_args() -> argparse.Namespace:
+    """
+    Parse the command line arguments inputs given
+
+    Returns
+    -------
+    args : Namespace
+        Namespace of passed command line argument inputs
+    """
+
+    parser = argparse.ArgumentParser(
+        description='Information for unarchiving files'
+    )
+
+    parser.add_argument(
+        '-j',
+        '--vcf_json',
+        type=str,
+        required=True,
+        help='JSON containing one file for each sample to unarchive'
+    )
+
+    args = parser.parse_args()
+
+    return args
+
 
 def unarchive_files(sample_vcf_dict) -> None:
     """
@@ -32,10 +66,13 @@ def unarchive_files(sample_vcf_dict) -> None:
         time.sleep(5)
 
 
-if __name__ == '__main__':
+def main():
+    args = parse_args()
     # Open the JSON containing the file IDs found for each sample
-    original_vcf_IDs = file_utils.read_in_json_from_local_file(
-        "resources", "sample_file_IDs_outcome.json"
-    )
+    original_vcf_ids = read_in_json(args.vcf_json)
     # Unarchive the files
-    unarchive_files(original_vcf_IDs)
+    unarchive_files(original_vcf_ids)
+
+
+if __name__ == "__main__":
+    main()
