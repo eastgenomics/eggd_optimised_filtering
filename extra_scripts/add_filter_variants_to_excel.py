@@ -77,7 +77,7 @@ def read_in_txt_file(path_to_txt_file):
         list containing each line from the file
     """
     with open(path_to_txt_file, encoding='utf8') as my_file:
-        lines = my_file.readlines()
+        lines = my_file.read().splitlines()
 
     return lines
 
@@ -97,14 +97,13 @@ def group_lines_by_case(lines_of_txt_file):
         list of lists, with each list representing each case with all the
         related variants
     """
-    # Split each case by \n char, creating a list with variants for each case
+    # Split each case by empty string, creating a list with variants for each case
     # and adding to main list
-    split_value = '\n'
     grouped_list = []
     temp_list = []
 
     for line in lines_of_txt_file[:-1]:
-        if line == split_value:
+        if not line:
             grouped_list.append(temp_list)
             temp_list = []
         else:
@@ -134,13 +133,10 @@ def change_filename_to_x_number(grouped_list):
     for nested_list in grouped_list:
         file_name = nested_list[0]
         variants = nested_list[1:]
-        stripped_variants = [
-            variant.replace('\t', ' ') for variant in variants
-        ]
-        stripped_variants = [
-            variant.replace('\n', '') for variant in stripped_variants
-        ]
-        joined_variants = '\n'.join(str(i) for i in stripped_variants)
+        joined_variants = "\n".join([
+            variant.replace('\t', ' ').replace('\n', '')
+            for variant in variants
+        ])
 
         # Replace filename in list with sample X number
         if 'GM' in file_name.upper():
@@ -148,7 +144,7 @@ def change_filename_to_x_number(grouped_list):
         else:
             x_number = file_name.split('_')[0]
 
-        updated_list = [x_number, joined_variants, len(stripped_variants)]
+        updated_list = [x_number, joined_variants, len(variants)]
         grouped_x_number_list.append(updated_list)
 
     return grouped_x_number_list

@@ -3,13 +3,13 @@ This script gets only one VCF file ID per sample (based on the most recent
 VCF), output this all to JSON and copies those files into the testing project
 """
 import argparse
+import concurrent.futures
 import dxpy as dx
 import os
 import sys
 import warnings
 
 from collections import defaultdict
-from pathlib import Path
 
 sys.path.append(os.path.abspath(
     os.path.join(os.path.realpath(__file__), '../../')
@@ -188,26 +188,56 @@ def add_testing_outcome(vcf_dict, outcome_df):
     return vcf_dict
 
 
-def copy_files_to_testing_project(vcf_dict, testing_project_id, folder_name):
+def copy_files(file, testing_project_id, folder_name):
     """
     Copy the one file per sample to my DNAnexus testing project
+
+    Parameters
+    ----------
+    file : dict
+        each dict of info for the VCF file found
+    testing_project_id : str
+        project ID for the testing project
+    folder_name : str
+        name of folder in testing project to copy files to
+    """
+    if file.get('id'):
+        file_id = file['id']
+        proj_id = file['project']
+        file_object = dx.DXFile(file_id, project=proj_id)
+        file_object.clone(testing_project_id, folder=f'/{folder_name}')
+
+
+def concurrent_copy(vcf_dict, workers, testing_project, folder_name):
+    """
+    Concurrently copy original VCF files to testing project
 
     Parameters
     ----------
     vcf_dict : dict
         final dict with GM number as key and dict with single VCF and sample
         info as value
+    workers : int
+        number of workers
     testing_project_id : str
         project ID for the testing project
     folder_name : str
         name of folder in testing project to copy files to
     """
-    for file in vcf_dict.values():
-        if file:
-            file_id = file['id']
-            proj_id = file['project']
-            file_object = dx.DXFile(file_id, project=proj_id)
-            file_object.clone(testing_project_id, folder=f'/{folder_name}')
+    with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
+        concurrent_jobs = {
+            executor.submit(
+                copy_files, file, testing_project, folder_name
+            ): file for file in vcf_dict.values()
+        }
+        for future in concurrent.futures.as_completed(concurrent_jobs):
+            try:
+                data = future.result()
+                print(data)
+            except Exception as exc:
+                print(
+                    f"Error copying data for {concurrent_jobs[future]}: {exc}"
+                )
 
 
 def main():
@@ -219,8 +249,8 @@ def main():
     final_vcf_dict = add_testing_outcome(vcf_dict_with_x, outcome_df)
     write_out_json(args.output_json, final_vcf_dict)
     if args.copy_files:
-        copy_files_to_testing_project(
-            final_vcf_dict, args.proj_id, args.folder_name
+        concurrent_copy(
+            final_vcf_dict, 8, args.proj_id, args.folder_name
         )
 
 if __name__ == '__main__':

@@ -77,7 +77,8 @@ def print_pos_stats(comparison_df):
     pos_mean = positive_cases['optimised_count'].mean()
 
     print(
-        f"A mean of {pos_mean:.2f} variants would be returned for positive cases"
+        f"A mean of {pos_mean:.2f} variants would be returned for positive "
+        "cases"
     )
 
 
@@ -97,7 +98,6 @@ def print_pos_stats(comparison_df):
         f"({false_neg_percentage:.2f}%) of positive cases no variants would be "
         "prioritised (false negative)"
     )
-    print("")
 
 
 def print_nmd_stats(comparison_df):
