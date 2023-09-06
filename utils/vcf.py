@@ -233,8 +233,8 @@ def add_filtering_flag(
         # are present, check var passes af_threshold for that MOI
         variants_passing_af_filter = []
         for variant in variant_list:
-            if variant.filter.keys()[0] == 'PASS':
-                if all([gene_present, gene_moi, af_threshold]):
+            if all([gene_present, gene_moi, af_threshold]):
+                if variant.filter.keys()[0] == 'PASS':
 
                     exome_af = variant.info['CSQ_gnomADe_AF'][0]
                     genome_af = variant.info['CSQ_gnomADg_AF'][0]
@@ -252,11 +252,11 @@ def add_filtering_flag(
                             'gnomAD_AF_exceeds_MOI_threshold'
                         )
                 else:
-                    variant.info[flag_name] = 'NOT_ASSESSED'
-                    variant.info['Filter_reason'] = 'Gene_info_not_available'
+                    variant.info[flag_name] = 'NOT_PRIORITISED'
+                    variant.info['Filter_reason'] = 'bcftools_filtered'
             else:
-                variant.info[flag_name] = 'NOT_PRIORITISED'
-                variant.info['Filter_reason'] = 'bcftools_filtered'
+                variant.info[flag_name] = 'NOT_ASSESSED'
+                variant.info['Filter_reason'] = 'Gene_info_not_available'
 
         # If any variants pass filters for the gene's MOI, get genotypes of all
         if variants_passing_af_filter:
@@ -388,6 +388,8 @@ def add_annotation(
         name of the input VCF
     panel_dict : dict
         default dict with each gene on panel as key and the gene info as val
+    filter_command : str
+        full bcftools filter command
     """
     split_vcf = f"{Path(input_vcf).stem}.split.vcf"
     filter_vcf = f"{Path(input_vcf).stem}.filter.vcf"

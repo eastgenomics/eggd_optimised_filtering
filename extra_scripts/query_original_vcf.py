@@ -2,19 +2,79 @@
 Script to find the original VCF(s) outputted from Sentieon based on a
 sample's GM number (or X number)
 """
+import argparse
 import dxpy as dx
+import os
 import re
+import sys
 import warnings
 
 from collections import defaultdict
 from pathlib import Path
 
-import utils.file_utils as file_utils
 
+sys.path.append(os.path.abspath(
+    os.path.join(os.path.realpath(__file__), '../../')
+))
+
+from utils.file_utils import read_in_csv, write_out_json
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 # Get path one directory above this file
 ROOT_DIR = Path(__file__).absolute().parents[1]
+
+
+def parse_args() -> argparse.Namespace:
+    """
+    Parse the command line arguments inputs given
+
+    Returns
+    -------
+    args : Namespace
+        Namespace of passed command line argument inputs
+    """
+
+    parser = argparse.ArgumentParser(
+        description='Information necessary to query original VCFs'
+    )
+
+    parser.add_argument(
+        '-s',
+        '--shire_output',
+        type=str,
+        required=True,
+        help='Path to formatted CSV output of reported cases from Shire'
+    )
+
+    parser.add_argument(
+        '-m',
+        '--x_gm_mapping',
+        type=str,
+        required=True,
+        help='CSV file with two columns containing mapping of X to GM no'
+    )
+
+    parser.add_argument(
+        '-o',
+        '--output_json',
+        type=str,
+        required=True,
+        help='Name of output JSON file'
+    )
+
+    parser.add_argument(
+        '-p',
+        '--search_projects',
+        action='store',
+        type=str,
+        required=True,
+        nargs='+',
+        help='Names of 002 project suffixes to search on DNAnexus'
+    )
+
+    args = parser.parse_args()
+
+    return args
 
 
 def find_002_projects(project_ending):
@@ -375,34 +435,32 @@ def check_files_found(final_sample_vcf_dict) -> None:
         "where one VCF was found"
     )
 
+    more_than_two_found = [
+        sample for sample, files in final_sample_vcf_dict.items() if len(files) > 2
+    ]
+    print(
+        f"There were {len(more_than_two_found)} samples "
+        "where more than 2 VCFs were found"
+    )
+
 
 def main():
-    all_002_project_ids = (
-        find_002_projects("TWE")
-        + find_002_projects("clinicalgenetics")
-        + find_002_projects("TSOE")
-        + find_002_projects(
-        "201029_K00178_0294_BHK737BBXY_clinicalgenetics_repeat"
-        )
-    )
+    args = parse_args()
+    all_002_project_ids = []
+    for project_ending in args.search_projects:
+        all_002_project_ids += find_002_projects(project_ending)
     vcfs_in_projs = get_all_vcfs_in_projects(all_002_project_ids)
-    obesity_df = file_utils.read_in_csv(
-        'resources', '230609_obesity_no_dups.csv'
-    )
+    obesity_df = read_in_csv(args.shire_output)
     obesity_df = modify_sample_names(obesity_df)
     gm_nos = get_list_of_gm_numbers(obesity_df)
     my_vcfs = find_files_by_gm_number(vcfs_in_projs, gm_nos)
     all_sample_vcfs_found = add_in_samples_not_found(my_vcfs, gm_nos)
-    x_gm_mapping = file_utils.read_in_csv(
-        'resources', 'obesity_cases_x_gm_mapping.csv'
-    )
+    x_gm_mapping = read_in_csv(args.x_gm_mapping)
     x_gm_dict = create_x_gm_mapping(x_gm_mapping)
     final_sample_vcf_dict = find_vcf_based_on_x_number(
         all_sample_vcfs_found, x_gm_dict, vcfs_in_projs
     )
-    file_utils.write_out_json(
-        'resources', 'sample_VCF_IDs.json', final_sample_vcf_dict
-    )
+    write_out_json(args.output_json, final_sample_vcf_dict)
     check_files_found(final_sample_vcf_dict)
 
 if __name__ == '__main__':

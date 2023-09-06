@@ -1,13 +1,8 @@
-import dxpy as dx
 import re
 
 from collections import defaultdict
-from pathlib import Path
 
 from .file_utils import read_in_json
-
-# Get path one directory above this file
-ROOT_DIR = Path(__file__).absolute().parents[1]
 
 
 def parse_genepanels(genepanels_file):
