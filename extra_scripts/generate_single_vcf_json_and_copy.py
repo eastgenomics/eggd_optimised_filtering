@@ -250,7 +250,7 @@ def main():
     write_out_json(args.output_json, final_vcf_dict)
     if args.copy_files:
         concurrent_copy(
-            final_vcf_dict, 8, args.proj_id, args.folder_name
+            final_vcf_dict, 64, args.proj_id, args.folder_name
         )
 
 if __name__ == '__main__':
