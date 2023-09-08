@@ -10,6 +10,7 @@ sanitise_shire_output.py
 
 # TXT file of file comparisons
 *.txt
+!requirements.txt
 
 # Scripts
 plotting.py

@@ -20,8 +20,6 @@ sys.path.append(os.path.abspath(
 from utils.file_utils import read_in_csv, write_out_json
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
-# Get path one directory above this file
-ROOT_DIR = Path(__file__).absolute().parents[1]
 
 
 def parse_args() -> argparse.Namespace:

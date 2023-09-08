@@ -4,8 +4,6 @@ General functions which are shared between files
 import json
 import pandas as pd
 
-from pathlib import Path
-
 
 def read_in_json(file_name):
     """
