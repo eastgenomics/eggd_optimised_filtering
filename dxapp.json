@@ -3,8 +3,8 @@
   "title": "eggd_optimised_filtering",
   "summary": "Create VCF with additional annotations required for optimised filtering from a VEP annotated VCF",
   "dxapi": "1.0.0",
-  "version": "1.1.0",
-  "whatsNew": "* v1.1.0 Initial working version which takes a VCF and adds optimised filtering annotations",
+  "version": "1.0.0",
+  "whatsNew": "* v1.0.0 Initial working version which takes a VCF and adds optimised filtering annotations",
   "authorizedUsers": [
     "org-emee_1"
   ],
@@ -13,12 +13,12 @@
   ],
   "inputSpec": [
     {
-      "name": "vcf",
-      "label": "VEP annotated vcf",
-      "class": "file",
-      "optional": false,
-      "help": "VCF file which has been annotated by VEP",
-      "group": "files"
+        "name": "vcf",
+        "label": "VEP annotated vcf",
+        "class": "file",
+        "optional": false,
+        "help": "VCF file which has been annotated by VEP",
+        "group": "files"
     },
     {
         "name": "config",
@@ -35,11 +35,11 @@
         "help": "Clinical indication string for the panel(s) being tested for"
     },
     {
-      "name": "panelapp_file",
-      "label": "PanelApp file",
-      "class": "file",
-      "optional": false,
-      "help": "JSON file containing information for all panels from PanelApp"
+        "name": "panelapp_file",
+        "label": "PanelApp file",
+        "class": "file",
+        "optional": false,
+        "help": "JSON file containing information for all panels from PanelApp"
     },
     {
         "name": "genepanels_file",
@@ -51,10 +51,10 @@
   ],
   "outputSpec": [
     {
-      "name": "output_vcf",
-      "label": "Output VCF",
-      "class": "file",
-      "help": "VCF with additional INFO fields based on optimised filtering parameters"
+        "name": "output_vcf",
+        "label": "Output VCF",
+        "class": "file",
+        "help": "VCF with additional INFO fields based on optimised filtering parameters"
     }
   ],
   "runSpec": {
@@ -88,7 +88,7 @@
     "aws:eu-central-1": {
       "systemRequirements": {
         "*": {
-          "instanceType": "mem1_ssd1_v2_x4"
+          "instanceType": "mem1_ssd1_v2_x2"
         }
       }
     }
