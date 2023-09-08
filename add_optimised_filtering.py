@@ -1,5 +1,5 @@
 """
-Main script which takes a file and adds our flag for optimised filtering
+Main script which takes a file and adds INFO field flag for optimised filtering
 """
 import argparse
 

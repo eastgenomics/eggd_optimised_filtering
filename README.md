@@ -1,7 +1,7 @@
 # optimised_filtering
-Optimised filtering is a tool used to add a flag to indicate variants which:
+Optimised filtering is a tool used to add an INFO field flag to indicate variants which:
 - Pass standard filtering with bcftools
-- Do not exceed gnomAD AF thresholds based on the gene's MOI (from PanelApp)
+- Do not exceed gnomAD AF thresholds based on the gene's MOI in that panel (from PanelApp)
 - Fit the required zygosity counts (of those passing AF thresholds based on the gene's MOI)
     - E.g. a biallelic gene requires at least 1 homozygous variant or at least 2 heterozygous variants
 
