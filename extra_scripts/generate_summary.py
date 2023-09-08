@@ -95,8 +95,8 @@ def print_pos_stats(comparison_df):
 
     print(
         f"In {reported_var_not_prioritised}/{total_number_of_positive_cases} "
-        f"({false_neg_percentage:.2f}%) of positive cases no variants would be "
-        "prioritised (false negative)"
+        f"({false_neg_percentage:.2f}%) of positive cases the reported "
+        "variant(s) would not be prioritised (false negative)"
     )
 
 

@@ -92,19 +92,26 @@ def read_in_config(file_path):
         name of the flag to be added
     rules : dict
         dict of the filtering rules for each gene MOI
+    VEP_fields_to_split : list
+        list of VEP fields to split with bcftools
     bcftools_filter_string : str
         bcftools command as a string
     """
     config_contents = file_utils.read_in_json(file_path)
 
     return list(map(config_contents.get, [
-        'flag_name', 'filtering_rules', 'bcftools_filter_string'
+        'flag_name', 'filtering_rules', 'VEP_fields_to_split',
+        'bcftools_filter_string'
     ]))
 
 
 def main():
     args = parse_args()
-    flag_name, rules, filter_string = read_in_config(args.config)
+    flag_name, rules, fields_to_split, filter_string = read_in_config(
+        args.config
+    )
+    print(fields_to_split)
+    print(type(fields_to_split))
     bcftools_filter_command = file_utils.unescape_bcftools_command(
         filter_string
     )
@@ -112,7 +119,7 @@ def main():
         args.panel_string, args.genepanels, args.panel_dump
     )
     vcf.add_annotation(
-        flag_name, rules, args.input_vcf, panel_dict,
+        flag_name, rules, fields_to_split, args.input_vcf, panel_dict,
         bcftools_filter_command
     )
 

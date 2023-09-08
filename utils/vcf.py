@@ -6,20 +6,6 @@ from pathlib import Path
 from pysam import VariantFile
 
 
-# Get path of parent directory
-ROOT_DIR = Path(__file__).absolute().parents[1]
-
-FIELDS_TO_SPLIT = [
-    'SYMBOL', 'Consequence', 'gnomADe_AF', 'gnomADg_AF', 'TWE_AF',
-    'ClinVar_CLNSIG', 'ClinVar_CLNSIGCONF', 'SpliceAI_pred_DS_AG',
-    'SpliceAI_pred_DS_AL', 'SpliceAI_pred_DS_DG', 'SpliceAI_pred_DS_DL'
-]
-
-FIELDS_TO_COLLAPSE = ",".join([
-    f"INFO/CSQ_{field}" for field in FIELDS_TO_SPLIT
-])
-
-
 def bgzip(file) -> None:
     """
     Call bgzip on a given file
@@ -52,7 +38,7 @@ def bgzip(file) -> None:
     )
 
 
-def bcftools_pre_process(input_vcf) -> str:
+def bcftools_pre_process(input_vcf, fields_to_split) -> str:
     """
     Decompose multiple transcript annotations to individual records, and split VEP CSQ string fields for SYMBOL, Consequence and gnomADe_AF to individual INFO keys. Adds a 'CSQ_' prefix to these fields extracted from the CSQ string to stop potential conflicts with existing INFO fields.
 
@@ -60,6 +46,9 @@ def bcftools_pre_process(input_vcf) -> str:
     ----------
     input_vcf : file
         path to VCF file to be split
+    fields_to_split : list
+        list of VEP fields to split which will be used for filtering
+        (specified in config)
 
     Returns
     -------
@@ -82,7 +71,7 @@ def bcftools_pre_process(input_vcf) -> str:
     # Split out the SYMBOL, Consequence, gnomADe_AF fields from the CSQ
     # string and name them with 'CSQ_{field}' as separate INFO fields
     cmd = (
-        f"bcftools +split-vep -c {','.join(FIELDS_TO_SPLIT)} -Ou -p 'CSQ_'"
+        f"bcftools +split-vep -c {','.join(fields_to_split)} -Ou -p 'CSQ_'"
         f" -d {input_vcf} -o {output_vcf}"
     )
 
@@ -322,7 +311,7 @@ def write_out_flagged_vcf(flagged_vcf, gene_variant_dict, vcf_contents):
                 out_vcf.write(variant)
 
 
-def bcftools_remove_csq_annotation(input_vcf):
+def bcftools_remove_csq_annotation(input_vcf, fields_to_split):
     """
     Remove expanded CSQ strings which were used to check rules, as having them
     expanded would break eggd_generate_variant workbook and they are still
@@ -332,12 +321,17 @@ def bcftools_remove_csq_annotation(input_vcf):
     ----------
     input_vcf : str
         Name of VCF file to have CSQ annotations removed
+    fields_to_split : list
+        list of VEP fields which were split with bcftools
 
     Returns
     -------
     output_vcf : str
         Name of output VCF file
     """
+    fields_to_collapse = ",".join([
+        f"INFO/CSQ_{field}" for field in fields_to_split
+    ])
     output_vcf = f"{Path(input_vcf).stem}.G2P.vcf"
 
     # check total rows before splitting
@@ -347,7 +341,7 @@ def bcftools_remove_csq_annotation(input_vcf):
     )
 
     cmd = (
-        f"bcftools annotate -x {FIELDS_TO_COLLAPSE} {input_vcf} -o {output_vcf}"
+        f"bcftools annotate -x {fields_to_collapse} {input_vcf} -o {output_vcf}"
     )
 
     output = subprocess.run(cmd, shell=True, capture_output=True)
@@ -373,7 +367,8 @@ def bcftools_remove_csq_annotation(input_vcf):
 
 
 def add_annotation(
-        flag_name, rules, input_vcf, panel_dict, filter_command
+        flag_name, rules, fields_to_split, input_vcf, panel_dict,
+        filter_command
     ):
     """
     Main function to take a VCF and add the flags required for filtering
@@ -384,6 +379,8 @@ def add_annotation(
         Name of the flag to add in
     rules : dict
         dict of the filtering rules for each of the inheritance types
+    fields_to_split : list
+        list of VEP fields to split
     input_vcf : str
         name of the input VCF
     panel_dict : dict
@@ -395,7 +392,7 @@ def add_annotation(
     filter_vcf = f"{Path(input_vcf).stem}.filter.vcf"
     flagged_vcf = f"{Path(input_vcf).stem}.flagged.vcf"
 
-    bcftools_pre_process(input_vcf)
+    bcftools_pre_process(input_vcf, fields_to_split)
     bcftools_filter(split_vcf, filter_command, filter_vcf)
 
     vcf_contents, sample_name = read_in_vcf(filter_vcf, flag_name)
@@ -403,7 +400,7 @@ def add_annotation(
         sample_name, vcf_contents, panel_dict, rules, flag_name
     )
     write_out_flagged_vcf(flagged_vcf, gene_var_dict, vcf_contents)
-    final_vcf = bcftools_remove_csq_annotation(flagged_vcf)
+    final_vcf = bcftools_remove_csq_annotation(flagged_vcf, fields_to_split)
     bgzip(final_vcf)
     os.remove(split_vcf)
     os.remove(filter_vcf)

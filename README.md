@@ -31,17 +31,17 @@ A config JSON file is required, which is given as an argument to the tool as a D
 	"flag_name": "G2P",
 	"filtering_rules": {
 		"biallelic": {
-			"af": 0.005,
+			"af": 0.05,
 			"HET": 2,
 			"HOM": 1
 		},
 		"monoallelic": {
-			"af": 0.0001,
+			"af": 0.001,
 			"HET": 1,
 			"HOM": 1
 		},
 		"both_monoallelic_and_biallelic": {
-			"af": 0.005,
+			"af": 0.05,
 			"HET": 1,
 			"HOM": 1
 		},
@@ -51,7 +51,13 @@ A config JSON file is required, which is given as an argument to the tool as a D
 			"HOM": 1
 		}
 	},
-	"bcftools_filter_string": "bcftools filter --soft-filter \"EXCLUDE\" -m + -e '(CSQ_Consequence~\"synonymous_variant\" | CSQ_Consequence~\"intron_variant\" | CSQ_Consequence~\"upstream_gene_variant\" | CSQ_Consequence~\"downstream_gene_variant\" | CSQ_Consequence~\"intergenic_variant\" | CSQ_Consequence~\"5_prime_UTR_variant\" | CSQ_Consequence~\"3_prime_UTR_variant\" | CSQ_gnomADe_AF>0.01 | CSQ_gnomADg_AF>0.01 | CSQ_TWE_AF>0.05) & CSQ_ClinVar_CLNSIGCONF!~ \"pathogenic\\/i\" & (CSQ_SpliceAI_pred_DS_AG<0.2 | CSQ_SpliceAI_pred_DS_AG==\".\") & (CSQ_SpliceAI_pred_DS_AL<0.2 | CSQ_SpliceAI_pred_DS_AL==\".\") & (CSQ_SpliceAI_pred_DS_DG<0.2 | CSQ_SpliceAI_pred_DS_DG==\".\") & (CSQ_SpliceAI_pred_DS_DL<0.2 | CSQ_SpliceAI_pred_DS_DL==\".\")'"
+	"VEP_fields_to_split": [
+		"SYMBOL", "Consequence", "gnomADe_AF", "gnomADg_AF", "TWE_AF",
+		"ClinVar_CLNSIG", "ClinVar_CLNSIGCONF", "SpliceAI_pred_DS_AG",
+		"SpliceAI_pred_DS_AL", "SpliceAI_pred_DS_DG", "SpliceAI_pred_DS_DL",
+		"HGMD_CLASS"
+	],
+	"bcftools_filter_string": "bcftools filter --soft-filter \"EXCLUDE\" -m + -e '(CSQ_Consequence~\"synonymous_variant\" | CSQ_Consequence~\"intron_variant\" | CSQ_Consequence~\"upstream_gene_variant\" | CSQ_Consequence~\"downstream_gene_variant\" | CSQ_Consequence~\"intergenic_variant\" | CSQ_Consequence~\"5_prime_UTR_variant\" | CSQ_Consequence~\"3_prime_UTR_variant\" | CSQ_gnomADe_AF>0.01 | CSQ_gnomADg_AF>0.01 | CSQ_TWE_AF>0.05) & CSQ_HGMD_CLASS!=\"DM\"  & CSQ_ClinVar_CLNSIGCONF!~ \"pathogenic\\/i\" & (CSQ_SpliceAI_pred_DS_AG<0.2 | CSQ_SpliceAI_pred_DS_AG==\".\") & (CSQ_SpliceAI_pred_DS_AL<0.2 | CSQ_SpliceAI_pred_DS_AL==\".\") & (CSQ_SpliceAI_pred_DS_DG<0.2 | CSQ_SpliceAI_pred_DS_DG==\".\") & (CSQ_SpliceAI_pred_DS_DL<0.2 | CSQ_SpliceAI_pred_DS_DL==\".\")'"
 }
 ```
 
