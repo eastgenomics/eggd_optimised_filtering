@@ -110,8 +110,6 @@ def main():
     flag_name, rules, fields_to_split, filter_string = read_in_config(
         args.config
     )
-    print(fields_to_split)
-    print(type(fields_to_split))
     bcftools_filter_command = file_utils.unescape_bcftools_command(
         filter_string
     )
