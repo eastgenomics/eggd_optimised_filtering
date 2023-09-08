@@ -34,12 +34,12 @@ optimised_filtered_2/
 
 # JSON
 *.json
+!dxapp.json
 
 .ipynb_checkpoints/
 
 # Byte-compiled / optimized / DLL files
-__pycache__/
-utils/__pycache__/
+*/__pycache__/
 *.py[cod]
 *$py.class
 

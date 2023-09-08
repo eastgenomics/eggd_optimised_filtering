@@ -1,0 +1,96 @@
+{
+  "name": "eggd_optimised_filtering",
+  "title": "eggd_optimised_filtering",
+  "summary": "Create VCF with additional annotations required for optimised filtering from a VEP annotated VCF",
+  "dxapi": "1.0.0",
+  "version": "1.1.0",
+  "whatsNew": "* v1.1.0 Initial working version which takes a VCF and adds optimised filtering annotations",
+  "authorizedUsers": [
+    "org-emee_1"
+  ],
+  "developers":[
+    "org-emee_1"
+  ],
+  "inputSpec": [
+    {
+      "name": "vcf",
+      "label": "VEP annotated vcf",
+      "class": "file",
+      "optional": false,
+      "help": "VCF file which has been annotated by VEP",
+      "group": "files"
+    },
+    {
+        "name": "config",
+        "label": "Config file",
+        "class": "file",
+        "optional": false,
+        "help": "Config file with filtering parameters such as AF thresholds and bcftools filter string"
+    },
+    {
+        "name": "panel_string",
+        "label": "Panel string",
+        "class": "string",
+        "optional": false,
+        "help": "Clinical indication string for the panel(s) being tested for"
+    },
+    {
+      "name": "panelapp_file",
+      "label": "PanelApp file",
+      "class": "file",
+      "optional": false,
+      "help": "JSON file containing information for all panels from PanelApp"
+    },
+    {
+        "name": "genepanels_file",
+        "label": "Genepanels file",
+        "class": "file",
+        "optional": false,
+        "help": "genepanels tsv file including PanelApp panel ID for each panel"
+      }
+  ],
+  "outputSpec": [
+    {
+      "name": "output_vcf",
+      "label": "Output VCF",
+      "class": "file",
+      "help": "VCF with additional INFO fields based on optimised filtering parameters"
+    }
+  ],
+  "runSpec": {
+    "timeoutPolicy": {
+      "*": {
+        "hours": 2
+      }
+    },
+    "interpreter": "bash",
+    "release": "20.04",
+    "version": "0",
+    "distribution": "Ubuntu",
+    "file": "src/code.sh",
+    "assetDepends": [
+      {
+        "name": "htslib",
+        "project": "project-Fkb6Gkj433GVVvj73J7x8KbV",
+        "folder": "/app_assets/htslib/htslib_v1.15.0",
+        "version": "1.15.0"
+      }
+    ]
+  },
+  "access": {
+    "project": "CONTRIBUTE",
+    "allProjects": "VIEW",
+    "network": [
+      "*"
+    ]
+  },
+  "regionalOptions": {
+    "aws:eu-central-1": {
+      "systemRequirements": {
+        "*": {
+          "instanceType": "mem1_ssd1_v2_x4"
+        }
+      }
+    }
+  }
+}
