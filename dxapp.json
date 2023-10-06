@@ -57,7 +57,7 @@
         {
         "name": "result_files",
         "label": "sample vcfs, with extra flags added",
-        "class": "array:file"
+        "class": "file"
         }
     ],
     "runSpec": {

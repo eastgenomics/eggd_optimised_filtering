@@ -11,8 +11,7 @@ set -e -x -o pipefail
 main() {
 
     # install dependencies
-    pip install pysam
-    pip install /pandas*
+    sudo -H python3 -m pip install --no-index --no-deps packages/*
     export BCFTOOLS_PLUGINS=/usr/local/libexec/bcftools
 
     # get inputs
@@ -23,9 +22,6 @@ main() {
         then zyg="-z"
     elif [ $zygosity = false ]
         then zyg=""
-    else
-        echo "zygosity option not recognised as true or false, defaulting to false"
-    fi
 
     # run tool
     python3 /add_optimised_filtering.py \

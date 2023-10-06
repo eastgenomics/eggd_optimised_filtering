@@ -1,5 +1,5 @@
 # eggd_optimised_filtering
-This app takes an annotated VCF (output of eggd_VEP) and adds filtering flags based on gnomad AF thresholds (provided in config) and, if requested, mode of inheritance (also provided in config). The app is adapted from the standalone local tool, the readme for which is partially copied below.
+This app takes an annotated VCF (output of eggd_VEP) and adds filtering flags based on gnomad AF thresholds (provided in config) and, if requested, mode of inheritance (also provided in config).
 
 ## Usage
 
