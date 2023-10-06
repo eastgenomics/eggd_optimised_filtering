@@ -236,7 +236,7 @@ def add_filtering_flag(
         variants_passing_af_filter = []
         for variant in variant_list:
             if all([gene_present, gene_moi, af_threshold]):
-                if (variant.filter.keys()[0] == 'PASS' or 'CEN' in sample_name):
+                if variant.filter.keys()[0] == 'PASS':
 
                     exome_af = variant.info['CSQ_gnomADe_AF'][0]
                     genome_af = variant.info['CSQ_gnomADg_AF'][0]
