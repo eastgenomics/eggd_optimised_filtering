@@ -7,12 +7,12 @@
 # Exit at any point if there is any error and output each line as it is executed (for debugging)
 set -e -x -o pipefail
 
+# install dependencies
+sudo -H python3 -m pip install --no-index --no-deps packages/*
+export BCFTOOLS_PLUGINS=/usr/local/libexec/bcftools
+
 
 main() {
-
-    # install dependencies
-    sudo -H python3 -m pip install --no-index --no-deps packages/*
-    export BCFTOOLS_PLUGINS=/usr/local/libexec/bcftools
 
     # get inputs
     dx-download-all-inputs --parallel
