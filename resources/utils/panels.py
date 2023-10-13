@@ -50,7 +50,8 @@ def get_panel_id_from_genepanels(panel_string, genepanels_dict) -> str:
     panel_set = genepanels_dict.get(panel_string)
     if len(panel_set) > 1:
         raise ValueError(
-            "The provided clinical indication matches multiple panel IDs in the genepanels file"
+            "The provided clinical indication matches multiple panel IDs"
+            " in the genepanels file"
         )
     try:
         panel_id = [p_id for p_id in panel_set][0]
@@ -122,8 +123,9 @@ def format_panel_info(panel_data) -> dict:
             region_name = region.get('name')
             conf_level = int(region.get('confidence_level'))
             moi = region.get('mode_of_inheritance')
-            # conf_level 3 indicates sufficient gene-disease association evidence
-            # for use in variant interpretation (3 is green, 2 amber, 1 red)
+            # conf_level 3 indicates sufficient gene-disease association
+            #  evidence for use in variant interpretation (3 is green, 2
+            #  amber, 1 red)
             if conf_level >=3:
                 panel_dict[region_name]['mode_of_inheritance'] = moi
                 panel_dict[region_name]['entity_type'] = 'region'

@@ -105,7 +105,10 @@ def read_in_config(file_path):
     config_contents = file_utils.read_in_json(file_path)
 
     return list(map(config_contents.get, [
-        'flag_name', 'filtering_rules', 'VEP_fields_to_split', 'bcftools_filter_string'
+        'flag_name',
+        'filtering_rules',
+        'VEP_fields_to_split',
+        'bcftools_filter_string'
     ]))
 
 
