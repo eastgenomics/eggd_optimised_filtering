@@ -249,26 +249,21 @@ def add_filtering_flag(
         variants_passing_af_filter = []
         for variant in variant_list:
             if all([gene_present, gene_moi, af_threshold]):
-                if variant.filter.keys()[0] == 'PASS':
+                exome_af = variant.info['CSQ_gnomADe_AF'][0]
+                genome_af = variant.info['CSQ_gnomADg_AF'][0]
 
-                    exome_af = variant.info['CSQ_gnomADe_AF'][0]
-                    genome_af = variant.info['CSQ_gnomADg_AF'][0]
+                if not exome_af:
+                    exome_af = 0.0
+                if not genome_af:
+                    genome_af = 0.0
 
-                    if not exome_af:
-                        exome_af = 0.0
-                    if not genome_af:
-                        genome_af = 0.0
-
-                    if (exome_af < af_threshold and genome_af < af_threshold):
-                        variants_passing_af_filter.append(variant)
-                    else:
-                        variant.info[flag_name] = 'NOT_PRIORITISED'
-                        variant.info['Filter_reason'] = (
-                            'gnomAD_AF_exceeds_MOI_threshold'
-                        )
+                if (exome_af < af_threshold and genome_af < af_threshold):
+                    variants_passing_af_filter.append(variant)
                 else:
                     variant.info[flag_name] = 'NOT_PRIORITISED'
-                    variant.info['Filter_reason'] = 'bcftools_filtered'
+                    variant.info['Filter_reason'] = (
+                        'gnomAD_AF_exceeds_MOI_threshold'
+                    )
             else:
                 variant.info[flag_name] = 'NOT_ASSESSED'
                 variant.info['Filter_reason'] = 'Gene_info_not_available'
@@ -425,15 +420,22 @@ def add_annotation(
 
     fields2split, fields2collapse = get_csq_fields(fields)
 
+    # separate csq fields (creates split_vcf)
     bcftools_pre_process(input_vcf, fields2split)
-    bcftools_filter(split_vcf, filter_command, filter_vcf)
 
-    vcf_contents, sample_name = read_in_vcf(filter_vcf, flag_name)
+    # create pysam object of vcf for flagging
+    vcf_contents, sample_name = read_in_vcf(split_vcf, flag_name)
+
+    # add MOI flags from config
     gene_var_dict = add_filtering_flag(
         sample_name, vcf_contents, panel_dict, rules, flag_name, zyg
     )
     write_out_flagged_vcf(flagged_vcf, gene_var_dict, vcf_contents)
-    final_vcf = bcftools_remove_csq_annotation(flagged_vcf, fields2collapse)
+
+    # run bcftools filter string from config (create filter_vcf)
+    bcftools_filter(flagged_vcf, filter_command, filter_vcf)
+    # return csq fields to standard format
+    final_vcf = bcftools_remove_csq_annotation(filter_vcf, fields2collapse)
     bgzip(final_vcf)
     os.remove(split_vcf)
     os.remove(filter_vcf)

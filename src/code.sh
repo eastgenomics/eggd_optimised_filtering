@@ -22,6 +22,7 @@ main() {
         then zyg="-z"
     elif [ $zygosity = false ]
         then zyg=""
+    fi
 
     # run tool
     python3 /add_optimised_filtering.py \
