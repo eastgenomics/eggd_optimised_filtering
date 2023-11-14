@@ -108,7 +108,6 @@ def format_panel_info(panel_data) -> dict:
     panel_dict = defaultdict(dict)
     genes = panel_data.get('genes')
     regions = panel_data.get('regions')
-
     if genes:
         for gene in genes:
             gene_symbol = gene.get('gene_symbol')
@@ -117,7 +116,6 @@ def format_panel_info(panel_data) -> dict:
             if conf_level >= 3:
                 panel_dict[gene_symbol]['mode_of_inheritance'] = moi
                 panel_dict[gene_symbol]['entity_type'] = 'gene'
-
     if regions:
         for region in regions:
             region_name = region.get('name')
@@ -129,7 +127,6 @@ def format_panel_info(panel_data) -> dict:
             if conf_level >=3:
                 panel_dict[region_name]['mode_of_inheritance'] = moi
                 panel_dict[region_name]['entity_type'] = 'region'
-
     return panel_dict
 
 
@@ -153,14 +150,22 @@ def simplify_MOI_terms(panel_dict) -> dict:
     updated_gene_dict = defaultdict(dict)
     for gene, moi_info in panel_dict.items():
         moi = moi_info.get('mode_of_inheritance')
+        xlr = "X-LINKED: hemizygous mutation in males, biallelic mutations in females"
+        xld = "X-LINKED: hemizygous mutation in males, monoallelic mutations in females may cause disease (may be less severe, later onset than males)"
         if re.search(r"^BIALLELIC", moi):
-            updated_moi = 'biallelic'
-        elif re.search(r"^MONOALLELIC|X-LINKED", moi):
-            updated_moi = 'monoallelic'
+            updated_moi = 'AR'
+        elif re.search(r"^MONOALLELIC", moi):
+            updated_moi = 'AD'
+        elif re.search(xlr, moi):
+            updated_moi = 'XLR'
+        elif re.search(xld, moi):
+            updated_moi = 'XLD'
         elif re.search(r"^BOTH", moi):
-            updated_moi = 'both_monoallelic_and_biallelic'
+            updated_moi = 'AD/AR'
+        elif re.search(r"^MITOCHONDRIAL", moi):
+            updated_moi = 'MITOCHONDRIAL'
         else:
-            updated_moi = 'unknown'
+            updated_moi = 'UNKNOWN'
 
         updated_gene_dict[gene]['mode_of_inheritance'] = updated_moi
 
