@@ -65,13 +65,6 @@ def parse_args() -> argparse.Namespace:
     )
 
     parser.add_argument(
-        '-z',
-        '--zygosity',
-        action='store_true',
-        help="Toggle zygosity/genotype filtering"
-    )
-
-    parser.add_argument(
         '-w',
         '--whitelist',
         type=str,
@@ -123,7 +116,7 @@ def main():
     )
     vcf.add_annotation(
         flag_name, rules, fields, args.input_vcf, panel_dict,
-        bcftools_filter_command, args.zygosity
+        bcftools_filter_command
     )
 
 
