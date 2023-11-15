@@ -199,23 +199,17 @@ def read_in_vcf(filter_vcf, flag_name):
 
 
 def add_filtering_flag(
-        sample_name, vcf_contents, panel_dict, rules, flag_name
+        vcf_contents, panel_dict
 ) -> dict:
     """
     Add the flags to each variant which will be used for filtering
 
     Parameters
     ----------
-    sample_name : str
-        name of the sample being tested (so we can obtain the genotypes)
     vcf_contents : pysam.VariantFile object
         pysam object containing all the VCF's info
     panel_dict : dict
         default dict with gene symbol as key and gene info as val
-    rules : dict
-        dict of the filtering rules for each of the inheritance types
-    flag_name : str
-        name of the info field to add for the flag
 
     Returns
     -------
@@ -232,44 +226,17 @@ def add_filtering_flag(
 
     # For each gene, check whether certain gene info is available
     for gene, variant_list in gene_variant_dict.items():
-        gene_present = gene_moi = af_threshold = False
+        gene_present = gene_moi = False
         if gene in panel_dict:
             gene_present = True
             gene_moi = panel_dict[gene].get('mode_of_inheritance')
-            if gene_moi:
-                if gene_moi in rules:
-                    af_threshold = rules[gene_moi].get('af')
 
         # Iterate over all of the variants called in that gene
-        # If variant previously passed bcftools filtering and gene present
-        # in our panel_dict and gene_moi and af threshold for that moi
-        # are present, check var passes af_threshold for that MOI
-        variants_passing_af_filter = []
+        # If gene present in our panel_dict and gene_moi is present,
+        # add MOI to variant info
         for variant in variant_list:
-            if all([gene_present, gene_moi, af_threshold]):
-                exome_af = variant.info['CSQ_gnomADe_AF'][0]
-                genome_af = variant.info['CSQ_gnomADg_AF'][0]
-
-                if not exome_af:
-                    exome_af = 0.0
-                if not genome_af:
-                    genome_af = 0.0
-
-                if (exome_af < af_threshold and genome_af < af_threshold):
-                    variants_passing_af_filter.append(variant)
-                else:
-                    variant.info[flag_name] = 'NOT_PRIORITISED'
-                    variant.info['Filter_reason'] = (
-                        'gnomAD_AF_exceeds_MOI_threshold'
-                    )
-            else:
-                variant.info[flag_name] = 'NOT_ASSESSED'
-                variant.info['Filter_reason'] = 'Gene_info_not_available'
-
-        # tag everything passing filters as prioritised
-        for variant in variants_passing_af_filter:
-            variant.info[flag_name] = 'PRIORITISED'
-
+            if all(gene_present, gene_moi):
+                variant.info[] = gene_moi
 
     return gene_variant_dict
 
