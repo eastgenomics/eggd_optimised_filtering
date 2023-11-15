@@ -195,6 +195,12 @@ def read_in_vcf(filter_vcf, flag_name):
         "Flag explaining why variant has not been prioritised"
     )
 
+    # Add MOI as INFO field
+    vcf_contents.header.info.add(
+        "MOI", ".", "String",
+        "Mode of inheritance from PanelApp (simplified)"
+    )
+
     return vcf_contents, sample_name
 
 
@@ -235,8 +241,8 @@ def add_filtering_flag(
         # If gene present in our panel_dict and gene_moi is present,
         # add MOI to variant info
         for variant in variant_list:
-            if all(gene_present, gene_moi):
-                variant.info[] = gene_moi
+            if all([gene_present, gene_moi]):
+                variant.info['MOI'] = gene_moi
 
     return gene_variant_dict
 
@@ -351,7 +357,7 @@ def add_annotation(
 
     # add MOI flags from config
     gene_var_dict = add_filtering_flag(
-        sample_name, vcf_contents, panel_dict, rules, flag_name
+        vcf_contents, panel_dict
     )
     write_out_flagged_vcf(flagged_vcf, gene_var_dict, vcf_contents)
 
