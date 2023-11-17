@@ -1,7 +1,7 @@
 import os
 import subprocess
 
-from collections import defaultdict, Counter
+from collections import defaultdict
 from pathlib import Path
 from pysam import VariantFile
 
@@ -181,19 +181,6 @@ def read_in_vcf(filter_vcf, flag_name):
 
     # Get the name of the sample from the VCF
     sample_name = list(vcf_contents.header.samples)[0]
-
-    # Add in our new flag to VCF header
-    vcf_contents.header.info.add(
-        flag_name, ".", "String",
-        "Flag for optimised filtering based on AF thresholds for a gene's "
-        "MOI and zygosity counts"
-    )
-
-    # Add the reason the variant was not prioritised as INFO field
-    vcf_contents.header.info.add(
-        "Filter_reason", ".", "String",
-        "Flag explaining why variant has not been prioritised"
-    )
 
     # Add MOI as INFO field
     vcf_contents.header.info.add(
