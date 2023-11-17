@@ -64,14 +64,6 @@ def parse_args() -> argparse.Namespace:
         help="PanelApp JSON dump"
     )
 
-    parser.add_argument(
-        '-w',
-        '--whitelist',
-        type=str,
-        required=False,
-        help='VCF of variants to always give back'
-    )
-
     args = parser.parse_args()
 
     return args

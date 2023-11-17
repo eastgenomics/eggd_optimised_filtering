@@ -150,15 +150,15 @@ def simplify_MOI_terms(panel_dict) -> dict:
     updated_gene_dict = defaultdict(dict)
     for gene, moi_info in panel_dict.items():
         moi = moi_info.get('mode_of_inheritance')
-        xlr = "X-LINKED: hemizygous mutation in males, biallelic mutations in females"
-        xld = "X-LINKED: hemizygous mutation in males, monoallelic mutations in females may cause disease (may be less severe, later onset than males)"
+        xlr = "X-LINKED: hemizygous mutation in males, biallelic"
+        xld = "X-LINKED: hemizygous mutation in males, monoallelic"
         if re.search(r"^BIALLELIC", moi):
             updated_moi = 'AR'
         elif re.search(r"^MONOALLELIC", moi):
             updated_moi = 'AD'
-        elif re.search(xlr, moi):
+        elif re.search(r"^"+xlr, moi):
             updated_moi = 'XLR'
-        elif re.search(xld, moi):
+        elif re.search(r"^"xld, moi):
             updated_moi = 'XLD'
         elif re.search(r"^BOTH", moi):
             updated_moi = 'AD/AR'
