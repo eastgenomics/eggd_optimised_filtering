@@ -158,14 +158,18 @@ def simplify_MOI_terms(panel_dict) -> dict:
             updated_moi = 'AD'
         elif re.search(r"^"+xlr, moi):
             updated_moi = 'XLR'
-        elif re.search(r"^"xld, moi):
+        elif re.search(r"^"+xld, moi):
             updated_moi = 'XLD'
         elif re.search(r"^BOTH", moi):
             updated_moi = 'AD/AR'
         elif re.search(r"^MITOCHONDRIAL", moi):
             updated_moi = 'MITOCHONDRIAL'
-        else:
+        elif re.search(r"^Other", moi):
+            updated_moi = 'OTHER'
+        elif re.search(r"^Unknown", moi):
             updated_moi = 'UNKNOWN'
+        else:
+            updated_moi = 'NONE'
 
         updated_gene_dict[gene]['mode_of_inheritance'] = updated_moi
 
