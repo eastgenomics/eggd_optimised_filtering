@@ -64,21 +64,6 @@ def parse_args() -> argparse.Namespace:
         help="PanelApp JSON dump"
     )
 
-    parser.add_argument(
-        '-z',
-        '--zygosity',
-        action='store_true',
-        help="Toggle zygosity/genotype filtering"
-    )
-
-    parser.add_argument(
-        '-w',
-        '--whitelist',
-        type=str,
-        required=False,
-        help='VCF of variants to always give back'
-    )
-
     args = parser.parse_args()
 
     return args
@@ -123,7 +108,7 @@ def main():
     )
     vcf.add_annotation(
         flag_name, rules, fields, args.input_vcf, panel_dict,
-        bcftools_filter_command, args.zygosity
+        bcftools_filter_command
     )
 
 

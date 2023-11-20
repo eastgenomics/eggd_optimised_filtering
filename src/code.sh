@@ -37,7 +37,7 @@ main() {
     echo "All scripts finished successfully, uploading output files to dx"
     if [ "$debug_fail_end" == 'true' ]; then exit 1; fi
     mkdir -p ~/out/result_files/
-    mv *flagged*.vcf.gz ~/out/result_files/
+    mv *.vcf.gz ~/out/result_files/
 
     # Upload output files
     dx-upload-all-outputs --parallel

@@ -1,7 +1,7 @@
 import os
 import subprocess
 
-from collections import defaultdict, Counter
+from collections import defaultdict
 from pathlib import Path
 from pysam import VariantFile
 
@@ -182,42 +182,27 @@ def read_in_vcf(filter_vcf, flag_name):
     # Get the name of the sample from the VCF
     sample_name = list(vcf_contents.header.samples)[0]
 
-    # Add in our new flag to VCF header
+    # Add MOI as INFO field
     vcf_contents.header.info.add(
-        flag_name, ".", "String",
-        "Flag for optimised filtering based on AF thresholds for a gene's "
-        "MOI and zygosity counts"
-    )
-
-    # Add the reason the variant was not prioritised as INFO field
-    vcf_contents.header.info.add(
-        "Filter_reason", ".", "String",
-        "Flag explaining why variant has not been prioritised"
+        "MOI", ".", "String",
+        "Mode of inheritance from PanelApp (simplified)"
     )
 
     return vcf_contents, sample_name
 
 
 def add_filtering_flag(
-        sample_name, vcf_contents, panel_dict, rules, flag_name, zyg
+        vcf_contents, panel_dict
 ) -> dict:
     """
     Add the flags to each variant which will be used for filtering
 
     Parameters
     ----------
-    sample_name : str
-        name of the sample being tested (so we can obtain the genotypes)
     vcf_contents : pysam.VariantFile object
         pysam object containing all the VCF's info
     panel_dict : dict
         default dict with gene symbol as key and gene info as val
-    rules : dict
-        dict of the filtering rules for each of the inheritance types
-    flag_name : str
-        name of the info field to add for the flag
-    zyg : bool
-        toggle zygosity filtering on/off
 
     Returns
     -------
@@ -234,84 +219,17 @@ def add_filtering_flag(
 
     # For each gene, check whether certain gene info is available
     for gene, variant_list in gene_variant_dict.items():
-        gene_present = gene_moi = af_threshold = False
+        gene_present = gene_moi = False
         if gene in panel_dict:
             gene_present = True
             gene_moi = panel_dict[gene].get('mode_of_inheritance')
-            if gene_moi:
-                if gene_moi in rules:
-                    af_threshold = rules[gene_moi].get('af')
 
         # Iterate over all of the variants called in that gene
-        # If variant previously passed bcftools filtering and gene present
-        # in our panel_dict and gene_moi and af threshold for that moi
-        # are present, check var passes af_threshold for that MOI
-        variants_passing_af_filter = []
+        # If gene present in our panel_dict and gene_moi is present,
+        # add MOI to variant info
         for variant in variant_list:
-            if all([gene_present, gene_moi, af_threshold]):
-                exome_af = variant.info['CSQ_gnomADe_AF'][0]
-                genome_af = variant.info['CSQ_gnomADg_AF'][0]
-
-                if not exome_af:
-                    exome_af = 0.0
-                if not genome_af:
-                    genome_af = 0.0
-
-                if (exome_af < af_threshold and genome_af < af_threshold):
-                    variants_passing_af_filter.append(variant)
-                else:
-                    variant.info[flag_name] = 'NOT_PRIORITISED'
-                    variant.info['Filter_reason'] = (
-                        'gnomAD_AF_exceeds_MOI_threshold'
-                    )
-            else:
-                variant.info[flag_name] = 'NOT_ASSESSED'
-                variant.info['Filter_reason'] = 'Gene_info_not_available'
-
-        # If any variants pass filters for the gene's MOI,
-        # and zygosity filtering is requested, get genotypes of all
-        if variants_passing_af_filter and zyg:
-            gtypes = [
-                [genotype for genotype in variant.samples[sample_name]['GT']]
-                for variant in variants_passing_af_filter
-            ]
-
-            # Check no presence of GT including 2 or above to ensure
-            # multiallelics have been decomposed
-            assert all([all(x < 2 for x in gtype) for gtype in gtypes]), (
-                "Multiallelic variants have not been decomposed"
-            )
-
-            # Create list of a count of 1 for each variant
-            gt_counts = [genotype.count(1) for genotype in gtypes]
-            count_het_homs = Counter(gt_counts)
-
-            # Get number of hets and homs needed for the gene's MOI
-            hets_needed = rules[gene_moi]['HET']
-            homs_needed = rules[gene_moi]['HOM']
-
-            # Count how many het (1) and hom (2) variants there are which pass
-            # filters for that gene
-            het_count = count_het_homs.get(1, 0)
-            hom_count = count_het_homs.get(2, 0)
-
-            # If either enough hets or enough homs then add our PRIORITISED flag
-            if ((het_count >= hets_needed) or (hom_count >= homs_needed)):
-                for variant in variants_passing_af_filter:
-                    variant.info[flag_name] = 'PRIORITISED'
-            # If not enough hets or homs add NOT_PRIORITISED flag
-            else:
-                for variant in variants_passing_af_filter:
-                    variant.info[flag_name] = 'NOT_PRIORITISED'
-                    variant.info['Filter_reason'] = (
-                        'Zygosity_count_does_not_fit_MOI'
-                    )
-
-        # otherwise just chuck a PRIORITISED flag on everything
-        else:
-            for variant in variants_passing_af_filter:
-                variant.info[flag_name] = 'PRIORITISED'
-
+            if all([gene_present, gene_moi]):
+                variant.info['MOI'] = gene_moi
 
     return gene_variant_dict
 
@@ -392,7 +310,7 @@ def bcftools_remove_csq_annotation(input_vcf, fields):
 
 
 def add_annotation(
-        flag_name, rules, fields, input_vcf, panel_dict, filter_command, zyg
+        flag_name, rules, fields, input_vcf, panel_dict, filter_command
     ):
     """
     Main function to take a VCF and add the flags required for filtering
@@ -411,8 +329,6 @@ def add_annotation(
         default dict with each gene on panel as key and the gene info as val
     filter_command : str
         full bcftools filter command
-    zyg : bool
-        toggle zygosity filtering on/off
     """
     split_vcf = f"{Path(input_vcf).stem}.split.vcf"
     filter_vcf = f"{Path(input_vcf).stem}.filter.vcf"
@@ -428,7 +344,7 @@ def add_annotation(
 
     # add MOI flags from config
     gene_var_dict = add_filtering_flag(
-        sample_name, vcf_contents, panel_dict, rules, flag_name, zyg
+        vcf_contents, panel_dict
     )
     write_out_flagged_vcf(flagged_vcf, gene_var_dict, vcf_contents)
 
