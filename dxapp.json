@@ -1,7 +1,7 @@
 {
     "name": "eggd_optimised_filtering",
     "title": "Optimised_filtering",
-    "summary": "Adds extra filtering of variants based on AF",
+    "summary": "Adds extra MOI info to VCF & filters on provided bcftools string",
     "dxapi": "1.0.0",
     "version": "1.0.0",
     "inputSpec": [
@@ -13,11 +13,10 @@
         "patterns": [ "*.vcf", "*.vcf.gz"]
         },
         {
-        "name": "config",
-        "label": "JSON formatted config file",
-        "class": "file",
-        "optional": false,
-        "patterns": ["*.json"]
+        "name": "filter_string",
+        "label": "BCFtools filter string (double quotes must be escaped)",
+        "class": "string",
+        "optional": false
         },
         {
         "name": "panel_string",
@@ -33,8 +32,8 @@
         "patterns": ["*.tsv"],
         "suggestions": [
             {
-            "project": "project-Fkb6Gkj433GVVvj73J7x8KbV",
-            "path": "/dynamic_files/gene_panels/"
+            "project": "project-GZ6g3BQ45B5j8YPb8QB8X5kF",
+            "id": "file-Gb2PjYj45B5zQ3F4jq39zbGy"
             }
         ]
         },
@@ -43,14 +42,18 @@
         "label": "dump of PanelApp in JSON format",
         "class": "file",
         "patterns": ["*.json"],
-        "optional": false
+        "optional": false,
+        "suggestions": [
+            {
+            "project": "project-GZ6g3BQ45B5j8YPb8QB8X5kF",
+            "id": "file-Gb2PjZQ45B5XpGVybk6gY5BP"
+            }
         },
         {
-        "name": "zygosity",
-        "label": "Perform zygosity filtering",
-        "class": "boolean",
-        "optional": false,
-        "default": false
+        "name": "csq_to_split",
+        "label": "INFO/CSQ fields to split for filtering (comma-separated, must match fields used in bcftools string)",
+        "class": "string",
+        "optional": false
         }
     ],
     "outputSpec": [

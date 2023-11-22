@@ -41,11 +41,11 @@ def parse_args() -> argparse.Namespace:
     )
 
     parser.add_argument(
-        '-c',
-        '--config',
+        '-f',
+        '--filter_string',
         type=str,
         required=True,
-        help='Config file containing filtering rules'
+        help='BCFtools filter string to be applied'
     )
 
     parser.add_argument(
@@ -62,6 +62,14 @@ def parse_args() -> argparse.Namespace:
         type=str,
         required=True,
         help="PanelApp JSON dump"
+    )
+
+    parser.add_argument(
+        '-s',
+        '--fields_to_split',
+        type=str,
+        required=True,
+        help="CSQ fields to be parsed, comma-separated list"
     )
 
     args = parser.parse_args()
@@ -99,7 +107,7 @@ def read_in_config(file_path):
 
 def main():
     args = parse_args()
-    flag_name, rules, fields, filter_string = read_in_config(args.config)
+    filter_string = args.filter_string.replace("\!~", "!~")
     bcftools_filter_command = file_utils.unescape_bcftools_command(
         filter_string
     )
@@ -107,7 +115,7 @@ def main():
         args.panel_string, args.genepanels, args.panel_dump
     )
     vcf.add_annotation(
-        flag_name, rules, fields, args.input_vcf, panel_dict,
+        args.fields_to_split.split(","), args.input_vcf, panel_dict,
         bcftools_filter_command
     )
 

@@ -17,21 +17,14 @@ main() {
     # get inputs
     dx-download-all-inputs --parallel
 
-    # set zygosity switch correctly for command below
-    if [ $zygosity = true ]
-        then zyg="-z"
-    elif [ $zygosity = false ]
-        then zyg=""
-    fi
-
     # run tool
     python3 /add_optimised_filtering.py \
         -i $input_vcf_path \
-        -c $config_path \
+        -f "$filter_string" \
         -p "$panel_string" \
         -g $genepanels_path \
         -d $panel_dump_path \
-        $zyg
+        -s "$csq_to_split"
 
     # prepare outputs
     echo "All scripts finished successfully, uploading output files to dx"

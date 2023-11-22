@@ -157,7 +157,7 @@ def bcftools_filter(split_vcf, filter_command, filter_vcf):
     )
 
 
-def read_in_vcf(filter_vcf, flag_name):
+def read_in_vcf(filter_vcf):
     """
     Read in the VCF file with the pysam package and add a new header line
     for the optimised filtering flag
@@ -310,17 +310,13 @@ def bcftools_remove_csq_annotation(input_vcf, fields):
 
 
 def add_annotation(
-        flag_name, rules, fields, input_vcf, panel_dict, filter_command
+    fields, input_vcf, panel_dict, filter_command
     ):
     """
     Main function to take a VCF and add the flags required for filtering
 
     Parameters
     ----------
-    flag_name : str
-        Name of the flag to add in
-    rules : dict
-        dict of the filtering rules for each of the inheritance types
     fields : list
         list of VEP CSQ fields from config
     input_vcf : str
@@ -340,7 +336,7 @@ def add_annotation(
     bcftools_pre_process(input_vcf, fields2split)
 
     # create pysam object of vcf for flagging
-    vcf_contents, sample_name = read_in_vcf(split_vcf, flag_name)
+    vcf_contents, sample_name = read_in_vcf(split_vcf)
 
     # add MOI flags from config
     gene_var_dict = add_filtering_flag(
