@@ -50,7 +50,7 @@
             }
         },
         {
-        "name": "csq_to_slit",
+        "name": "csq_to_split",
         "label": "INFO/CSQ fields to split for filtering (comma-separated, must match fields used in bcftools string)",
         "class": "string",
         "optional": false
