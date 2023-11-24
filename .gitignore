@@ -32,6 +32,8 @@ optimised_filtered_2/
 *.csv#
 *.tsv
 
+!test_genepanels.tsv
+
 # JSON
 *.json
 
