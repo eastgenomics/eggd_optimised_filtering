@@ -23,10 +23,9 @@ def get_csq_fields(fields):
     to_split : list of field labels
     to_collapse : string of fields above joined by commas
     """
-    to_collapse = ",".join([
-        f"INFO/CSQ_{field}" for field in fields
-    ])
-    return fields, to_collapse
+    to_collapse = ",".join([f"INFO/CSQ_{field}" for field in fields])
+
+    return to_collapse
 
 
 
@@ -190,9 +189,7 @@ def read_in_vcf(filter_vcf):
     return vcf_contents, sample_name
 
 
-def add_filtering_flag(
-        vcf_contents, panel_dict
-) -> dict:
+def add_filtering_flag(vcf_contents, panel_dict) -> dict:
     """
     Add the flags to each variant which will be used for filtering
 
@@ -212,9 +209,9 @@ def add_filtering_flag(
     # Add each variant in a gene/entity to a dict, with gene as key and list
     # of variants as value
     gene_variant_dict = defaultdict(list)
-    for record in vcf_contents:
-        gene = record.info['CSQ_SYMBOL'][0]
-        gene_variant_dict[gene].append(record)
+    for variant_record in vcf_contents:
+        gene = variant_record.info['CSQ_SYMBOL'][0]
+        gene_variant_dict[gene].append(variant_record)
 
     # For each gene, check whether certain gene info is available
     for gene, variant_list in gene_variant_dict.items():
@@ -225,10 +222,13 @@ def add_filtering_flag(
 
         # Iterate over all of the variants called in that gene
         # If gene present in our panel_dict and gene_moi is present,
-        # add MOI to variant info
+        # add the MOI we've taken from PanelApp to variant info
+        # otherwise set it to unknown
         for variant in variant_list:
             if all([gene_present, gene_moi]):
                 variant.info['MOI'] = gene_moi
+            else:
+                variant.info['MOI'] = 'Unknown'
 
     return gene_variant_dict
 
@@ -309,14 +309,14 @@ def bcftools_remove_csq_annotation(input_vcf, fields):
 
 
 def add_annotation(
-    fields, input_vcf, panel_dict, filter_command
+    fields2split, input_vcf, panel_dict, filter_command
     ):
     """
     Main function to take a VCF and add the flags required for filtering
 
     Parameters
     ----------
-    fields : list
+    fields2split : list
         list of VEP CSQ fields from config
     input_vcf : str
         name of the input VCF
@@ -329,7 +329,7 @@ def add_annotation(
     filter_vcf = f"{Path(input_vcf).stem}.filter.vcf"
     flagged_vcf = f"{Path(input_vcf).stem}.flagged.vcf"
 
-    fields2split, fields2collapse = get_csq_fields(fields)
+    fields2collapse = get_csq_fields(fields2split)
 
     # separate csq fields (creates split_vcf)
     bcftools_pre_process(input_vcf, fields2split)

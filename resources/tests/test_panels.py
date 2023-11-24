@@ -2,8 +2,6 @@ import os
 import pytest
 import sys
 
-from io import StringIO
-
 sys.path.append(os.path.abspath(
     os.path.join(os.path.realpath(__file__), '../../')
 ))
@@ -16,8 +14,9 @@ TEST_PANELDUMP = ""
 
 class TestParseGenePanels():
     """
-    Check that genepanels is parsed correctly into a dictionary
-    containing the PanelApp ID for each panel
+    Test the parse_genepanels function which reads a tsv into a dictionary
+    containing each clinical indication as key and PanelApp panel ID set as
+    value
     """
     genepanels_tsv = os.path.join(TEST_DATA_DIR, TEST_GENEPANELS)
 
@@ -30,7 +29,7 @@ class TestParseGenePanels():
             'C2.1_INSR': {''},
             'R100.3_Rare syndromic craniosynostosis or isolated multisuture synostosis_P': {'168'},
             'R101.1_Ehlers Danlos syndrome with a likely monogenic cause_P': {'53'},
-            'R341.1_Hereditary angioedema types I and II_G': {''},
+            'R341.1_Hereditary angioedema types I and II_G': {'', '12'},
             'R366.1_Inherited susceptibility to acute lymphoblastoid leukaemia (ALL)_P': {''},
             'R367.1_Inherited pancreatic cancer_P': {'524'}
         }, "Genepanels not parsed correctly into dictionary"
@@ -38,8 +37,8 @@ class TestParseGenePanels():
 
 class TestGetPanelIDFromGenePanels():
     """
-    Check that errors are raised correctly when getting a panel's ID
-    from the dictionary created from the genepanels file
+    Test the get_panel_id_from_genepanels function which takes
+    a panel string (clinical indication) and gets the PanelApp ID for the panel
     """
     test_panels_dict = {
         'R107.1_Bardet Biedl syndrome_P': {'543'},
@@ -50,10 +49,10 @@ class TestGetPanelIDFromGenePanels():
         'R23_Test_CI_P': {'504', ''}
     }
 
-    def test_get_panel_id_from_genepanels_when_single_ID_exists(self):
+    def test_get_panel_id_from_genepanels_when_single_id_exists(self):
         """
         Checks the correct panel ID is returned when given a
-        clinical indication that exists with only one ID in the set
+        clinical indication which exists and only has one ID in the set
         """
         panel_id = panels.get_panel_id_from_genepanels(
             'R107.1_Bardet Biedl syndrome_P', self.test_panels_dict
@@ -63,7 +62,7 @@ class TestGetPanelIDFromGenePanels():
             "clinical indication exists"
         )
 
-    def test_get_panel_id_for_CI_with_multiple_panel_IDs(self):
+    def test_get_panel_id_for_ci_with_multiple_panel_ids(self):
         """
         Assertion error should be raised if > 1 panel ID found
         """

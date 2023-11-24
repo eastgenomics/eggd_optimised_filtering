@@ -85,20 +85,28 @@ def check_panel_string(panel_string):
 
     Parameters
     ----------
-    panel_string : _type_
+    panels_from_string : str
         _description_
     """
     # Check the number of panels
-    panel_counts = re.sub(
+    panels_from_string = re.sub(
         r'_HGNC:[\d]+(;)?', '', panel_string
-    ).rstrip(';').count(';')
+    ).rstrip(';')
+    panel_counts = panels_from_string.count(';')
 
-    assert panel_counts == 0, ("More than one panel given")
+    assert panel_counts == 0, (
+        f"More than one panel given: {panels_from_string}"
+    )
+
+    # # Get HGNC IDs to deal with separately
+    # hgnc_ids = list(set(re.findall(r'_HGNC:[\d]+', panel_string)))
+
 
 
 def main():
     args = parse_args()
     filter_string = args.filter_string.replace("\!~", "!~")
+    check_panel_string(args.panel_string)
     bcftools_filter_command = file_utils.unescape_bcftools_command(
         filter_string
     )

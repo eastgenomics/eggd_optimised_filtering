@@ -31,6 +31,7 @@ optimised_filtered_2/
 *.csv
 *.csv#
 *.tsv
+*.tsv#
 
 !test_genepanels.tsv
 
