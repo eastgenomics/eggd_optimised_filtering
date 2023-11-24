@@ -23,11 +23,10 @@ def get_csq_fields(fields):
     to_split : list of field labels
     to_collapse : string of fields above joined by commas
     """
-    to_split = fields
     to_collapse = ",".join([
-        f"INFO/CSQ_{field}" for field in to_split
+        f"INFO/CSQ_{field}" for field in fields
     ])
-    return to_split, to_collapse
+    return fields, to_collapse
 
 
 

@@ -1,4 +1,5 @@
 import re
+import sys
 
 from collections import defaultdict
 
@@ -7,8 +8,9 @@ from .file_utils import read_in_json
 
 def parse_genepanels(genepanels_file):
     """
-    Parse the genepanels file to make a dict mapping clinical indication
-    to PanelApp panel ID
+    Parse the genepanels file to make a dict mapping each clinical indication
+    to a PanelApp panel ID. This is so we can search the PanelApp dump by
+    panel ID later
 
     Parameters
     ----------
@@ -18,7 +20,14 @@ def parse_genepanels(genepanels_file):
     Returns
     -------
     panel_data : dict
-        dict containing each clinical ind with the panel ID as val
+        dict containing each clinical ind with the panel ID as value
+
+    Example format:
+
+    {
+        'R136.1_Primary lymphoedema_P': {'65'},
+        'R130.1_Short QT syndrome_P': {'224'}
+    }
     """
     panel_data = {}
 
@@ -47,17 +56,23 @@ def get_panel_id_from_genepanels(panel_string, genepanels_dict) -> str:
     panel_id : str
         ID of the panel of interest, e.g. '130'
     """
+    # Get the set (containing panel ID) for that panel string
     panel_set = genepanels_dict.get(panel_string)
-    if len(panel_set) > 1:
-        raise ValueError(
-            "The provided clinical indication matches multiple panel IDs"
-            " in the genepanels file"
+    if panel_set:
+        panel_ids = [panel_id for panel_id in panel_set]
+        assert len(panel_ids) < 2, (
+            f"Multiple panel IDs found for panel string: {panel_string}"
         )
-    try:
-        panel_id = [p_id for p_id in panel_set][0]
-    except Exception as err:
-        raise ValueError(
-            f"The panel ID does not exist in the genepanels file: {err}"
+        panel_id = panel_ids[0]
+        assert panel_id, (
+            "The clinical indication does not have a panel ID found in "
+            f"genepanels: {panel_string}"
+        )
+
+    else:
+        raise KeyError(
+            "The panel string was not found in the genepanels file: "
+            f"{panel_string}"
         )
 
     return panel_id

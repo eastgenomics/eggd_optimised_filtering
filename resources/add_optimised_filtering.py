@@ -2,6 +2,7 @@
 Main script which takes a file and adds our flag for optimised filtering
 """
 import argparse
+import re
 
 from utils import vcf
 from utils import panels
@@ -77,32 +78,22 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def read_in_config(file_path):
+def check_panel_string(panel_string):
     """
-    Read in the info needed for filtering from JSON config
+    Check that the panel string given doesn't contain multiple panels
+    (HGNC IDs or one panel with extra HGNC IDs is fine)
 
     Parameters
     ----------
-    file_path : str
-        path of the config file
-
-    Returns
-    -------
-    flag_name : str
-        name of the flag to be added
-    rules : dict
-        dict of the filtering rules for each gene MOI
-    bcftools_filter_string : str
-        bcftools command as a string
+    panel_string : _type_
+        _description_
     """
-    config_contents = file_utils.read_in_json(file_path)
+    # Check the number of panels
+    panel_counts = re.sub(
+        r'_HGNC:[\d]+(;)?', '', panel_string
+    ).rstrip(';').count(';')
 
-    return list(map(config_contents.get, [
-        'flag_name',
-        'filtering_rules',
-        'VEP_fields_to_split',
-        'bcftools_filter_string'
-    ]))
+    assert panel_counts == 0, ("More than one panel given")
 
 
 def main():
