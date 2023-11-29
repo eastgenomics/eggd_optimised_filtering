@@ -78,8 +78,8 @@ def get_panel_id_from_genepanels(panel_string, genepanels_dict) -> str:
         )
         panel_id = panel_ids[0]
         assert panel_id, (
-            "The clinical indication does not have a panel ID found in "
-            f"genepanels: {panel_string}"
+            f"The clinical indication {panel_string} does not have a panel ID "
+            "found in genepanels"
         )
 
     else:
@@ -91,7 +91,82 @@ def get_panel_id_from_genepanels(panel_string, genepanels_dict) -> str:
     return panel_id
 
 
-def parse_panelapp_dump(panel_id, panelapp_dump):
+def transform_panelapp_dump_to_dict(panel_dump):
+    """
+    Converts the PanelApp dump list of dicts to a dictionary with
+    PanelApp IDs as keys
+
+    Parameters
+    ----------
+    panel_dump : list
+        PanelApp dump as list of dicts, one with info for each panel
+
+    Returns
+    -------
+    panel_id_dict : dict
+        dict where the PanelApp ID of the panel is the key
+
+    [{
+        'panel_source': 'PanelApp',
+        'panel_name': 'Stickler syndrome',
+        'external_id': '3',
+        'panel_version': '4.0',
+        'genes': [
+            {
+                'transcript': None,
+                'hgnc_id': 'HGNC:1071',
+                'confidence_level': '3',
+                'mode_of_inheritance': 'MONOALLELIC, autosomal or pseudoautosomal, imprinted status unknown',
+                'mode_of_pathogenicity': None,
+                'penetrance': None,
+                'gene_justification': 'PanelApp',
+                'transcript_justification': 'PanelApp',
+                'alias_symbols': None,
+                'gene_symbol': 'BMP4'
+            },
+            ..
+        }]
+                            |
+                            |
+                            ▼
+    {
+        '3': {
+            'panel_source': 'PanelApp',
+            'panel_name': 'Stickler syndrome',
+            'external_id': '3',
+            'panel_version': '4.0',
+            'genes': [
+                {
+                    'transcript': None,
+                    'hgnc_id': 'HGNC:1071',
+                    'confidence_level': '3',
+                    'mode_of_inheritance': 'MONOALLELIC, autosomal or pseudoautosomal, imprinted status unknown',
+                    'mode_of_pathogenicity': None,
+                    'penetrance': None,
+                    'gene_justification': 'PanelApp',
+                    'transcript_justification': 'PanelApp',
+                    'alias_symbols': None,
+                    'gene_symbol': 'BMP4'
+                }
+            }, ..
+    }
+    """
+    # Get list of panel IDs
+    panel_ids = []
+    for panel in panel_dump:
+        panel_id = panel.get('external_id')
+        if panel_id:
+            panel_ids.append(str(panel_id))
+        else:
+            print(f"Panel did not have external ID key present: {panel}")
+
+    # Create new dict with panel ID as key
+    panel_id_dict = dict(zip(panel_ids, panel_dump))
+
+    return panel_id_dict
+
+
+def parse_panelapp_dump(panel_id, panelapp_dict):
     """
     Parse the PanelApp dump and get the dictionary for our panel
 
@@ -99,21 +174,20 @@ def parse_panelapp_dump(panel_id, panelapp_dump):
     ----------
     panel_id : str
         PanelApp ID of the panel
-    panelapp_dump : list
-        PanelApp dump as list of dicts of each panel
+    panelapp_dict : dict
+        PanelApp dump dict where keys are panel IDs
 
     Returns
     -------
     my_panel : dict
         dict of all the info for a particular panel
     """
-    try:
-        my_panel = [
-            item for item in panelapp_dump if item['external_id'] == panel_id
-        ][0]
-    except Exception as err:
-        raise ValueError(
-            f"The panel ID {panel_id} does not exist in PanelApp JSON: {err}")
+    my_panel = panelapp_dict.get(panel_id)
+
+    if not my_panel:
+        raise KeyError(
+            f"The panel ID {panel_id} was not found in the PanelApp JSON dump"
+        )
 
     return my_panel
 

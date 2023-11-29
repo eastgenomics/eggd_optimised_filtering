@@ -40,27 +40,3 @@ class TestCheckPanelString():
             check_panel_string(self.multiple_panels_multiple_hgncs_before)
 
 
-class TestCheckFieldsToSplit():
-    """
-    _summary_
-    """
-    # These should all be fine
-    valid_string = "SYMBOL,Consequence,gnomADe_AF,gnomADg_AF,TWE_AF,ClinVar_CLNSIG"
-    string_with_leading_commas = ",SYMBOL,Consequence,gnomADe_AF,gnomADg_AF,TWE_AF,ClinVar_CLNSIG,"
-    string_with_leading_trailing_commas = ",SYMBOL,Consequence,gnomADe_AF,gnomADg_AF,TWE_AF,ClinVar_CLNSIG,"
-    string_with_trailing_commas = ",SYMBOL,Consequence,gnomADe_AF,gnomADg_AF,TWE_AF,ClinVar_CLNSIG,"
-
-    # Raise assertion error
-    string_with_semicolon_delims = "SYMBOL;Consequence;gnomADe_AF;gnomADg_AF;TWE_AF;ClinVar_CLNSIG"
-    string_with_leading_trailing_semicolons = ";SYMBOL;Consequence;gnomADe_AF;gnomADg_AF;TWE_AF;ClinVar_CLNSIG;"
-
-    string_with_mix_of_delims = "SYMBOL,Consequence;gnomADe_AF,gnomADg_AF;TWE_AF,ClinVar_CLNSIG"
-
-    string_with_spaces_as_delim = "SYMBOL Consequence gnomADe_AF gnomADg_AF TWE_AF ClinVar_CLNSIG"
-
-    string_with_leading_spaces = " SYMBOL,Consequence,gnomADe_AF,gnomADg_AF,TWE_AF,ClinVar_CLNSIG"
-
-    string_with_leading_trailing_spaces = " SYMBOL,Consequence,gnomADe_AF,gnomADg_AF,TWE_AF,ClinVar_CLNSIG "
-
-
-# test_csq_fields = "SYMBOL,Consequence,gnomADe_AF,gnomADg_AF,TWE_AF,ClinVar_CLNSIG,ClinVar_CLNSIGCONF,SpliceAI_pred_DS_AG,SpliceAI_pred_DS_AL,SpliceAI_pred_DS_DG,SpliceAI_pred_DS_DL,HGMD_CLASS"
