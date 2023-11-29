@@ -65,14 +65,6 @@ def parse_args() -> argparse.Namespace:
         help="PanelApp JSON dump"
     )
 
-    parser.add_argument(
-        '-s',
-        '--fields_to_split',
-        type=str,
-        required=True,
-        help="CSQ fields to be parsed, comma-separated list"
-    )
-
     args = parser.parse_args()
 
     return args
@@ -85,8 +77,12 @@ def check_panel_string(panel_string):
 
     Parameters
     ----------
-    panels_from_string : str
-        _description_
+    panel_string : str
+        the panel the patient is being tested for
+    Raises
+    ------
+    AssertionError
+        Raised if more than one panel is given to the tool (HGNC IDs are OK)
     """
     # Check the number of panels
     panels_from_string = re.sub(
@@ -97,10 +93,6 @@ def check_panel_string(panel_string):
     assert panel_counts == 0, (
         f"More than one panel given: {panels_from_string}"
     )
-
-    # # Get HGNC IDs to deal with separately
-    # hgnc_ids = list(set(re.findall(r'_HGNC:[\d]+', panel_string)))
-
 
 
 def main():
@@ -114,8 +106,7 @@ def main():
         args.panel_string, args.genepanels, args.panel_dump
     )
     vcf.add_annotation(
-        args.fields_to_split.split(","), args.input_vcf, panel_dict,
-        bcftools_filter_command
+        args.input_vcf, panel_dict, bcftools_filter_command
     )
 
 

@@ -36,6 +36,19 @@ def parse_genepanels(genepanels_file):
             panel_id, clin_ind, panel, gene = line.split('\t')
             panel_data.setdefault(clin_ind, set()).add(panel_id)
 
+    duplicate_ids = {k:v for k, v in panel_data.items() if len(v) > 1}
+
+    assert not duplicate_ids, (
+        f"Multiple panel IDs found for clinical indications: {duplicate_ids}"
+    )
+
+    no_panel_id = {k for k, v in panel_data.items() if v == {''}}
+
+    if no_panel_id:
+        print(
+            "Warning: the following panels have no panel ID found: "
+            f"{no_panel_id}")
+
     return panel_data
 
 
@@ -191,7 +204,7 @@ def simplify_MOI_terms(panel_dict) -> dict:
     return updated_gene_dict
 
 
-def get_formatted_dict(panel_string, genepanels_file, panelapp_file_id):
+def get_formatted_dict(panel_string, genepanels_file, panelapp_file):
     """
     Main function to get a simple dictionary for each panel
 
@@ -213,7 +226,7 @@ def get_formatted_dict(panel_string, genepanels_file, panelapp_file_id):
     # and parse out the gene and region info
     genepanels_dict = parse_genepanels(genepanels_file)
     panel_id = get_panel_id_from_genepanels(panel_string, genepanels_dict)
-    panel_dump = read_in_json(panelapp_file_id)
+    panel_dump = read_in_json(panelapp_file)
     panel_dict = parse_panelapp_dump(panel_id, panel_dump)
     panel_of_interest = format_panel_info(panel_dict)
     final_panel_dict = simplify_MOI_terms(panel_of_interest)

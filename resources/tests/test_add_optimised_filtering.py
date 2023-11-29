@@ -13,7 +13,7 @@ from add_optimised_filtering import check_panel_string
 
 class TestCheckPanelString():
     """
-    Tests for checking that the panel string given is checked correctly
+    Tests that check that the panel string given is valid
     """
     # Test panel string examples
     just_multiple_hgncs = '_HGNC:16627;_HGNC:795'
@@ -33,8 +33,34 @@ class TestCheckPanelString():
     multiple_panels_multiple_hgncs_inbetween = 'R49.3_Beckwith-Wiedemann syndrome_G;_HGNC:16627;R228.1_Tuberous sclerosis_G;_HGNC:795'
 
     def test_just_multiple_hgncs(self):
+        """
+        _summary_
+        """
         with pytest.raises(AssertionError):
             check_panel_string(self.multiple_panels_multiple_hgncs_before)
+
+
+class TestCheckFieldsToSplit():
+    """
+    _summary_
+    """
+    # These should all be fine
+    valid_string = "SYMBOL,Consequence,gnomADe_AF,gnomADg_AF,TWE_AF,ClinVar_CLNSIG"
+    string_with_leading_commas = ",SYMBOL,Consequence,gnomADe_AF,gnomADg_AF,TWE_AF,ClinVar_CLNSIG,"
+    string_with_leading_trailing_commas = ",SYMBOL,Consequence,gnomADe_AF,gnomADg_AF,TWE_AF,ClinVar_CLNSIG,"
+    string_with_trailing_commas = ",SYMBOL,Consequence,gnomADe_AF,gnomADg_AF,TWE_AF,ClinVar_CLNSIG,"
+
+    # Raise assertion error
+    string_with_semicolon_delims = "SYMBOL;Consequence;gnomADe_AF;gnomADg_AF;TWE_AF;ClinVar_CLNSIG"
+    string_with_leading_trailing_semicolons = ";SYMBOL;Consequence;gnomADe_AF;gnomADg_AF;TWE_AF;ClinVar_CLNSIG;"
+
+    string_with_mix_of_delims = "SYMBOL,Consequence;gnomADe_AF,gnomADg_AF;TWE_AF,ClinVar_CLNSIG"
+
+    string_with_spaces_as_delim = "SYMBOL Consequence gnomADe_AF gnomADg_AF TWE_AF ClinVar_CLNSIG"
+
+    string_with_leading_spaces = " SYMBOL,Consequence,gnomADe_AF,gnomADg_AF,TWE_AF,ClinVar_CLNSIG"
+
+    string_with_leading_trailing_spaces = " SYMBOL,Consequence,gnomADe_AF,gnomADg_AF,TWE_AF,ClinVar_CLNSIG "
 
 
 # test_csq_fields = "SYMBOL,Consequence,gnomADe_AF,gnomADg_AF,TWE_AF,ClinVar_CLNSIG,ClinVar_CLNSIGCONF,SpliceAI_pred_DS_AG,SpliceAI_pred_DS_AL,SpliceAI_pred_DS_DG,SpliceAI_pred_DS_DL,HGMD_CLASS"

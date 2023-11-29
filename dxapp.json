@@ -49,12 +49,6 @@
             "id": "file-Gb2PjZQ45B5XpGVybk6gY5BP"
             }
         ]
-        },
-        {
-        "name": "csq_to_split",
-        "label": "INFO/CSQ fields to split for filtering (comma-separated, must match fields used in bcftools string)",
-        "class": "string",
-        "optional": false
         }
     ],
     "outputSpec": [

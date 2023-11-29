@@ -10,25 +10,6 @@ from pysam import VariantFile
 ROOT_DIR = Path(__file__).absolute().parents[1]
 
 
-def get_csq_fields(fields):
-    """
-    Creates lists of VEP CSQ fields to be dealt with separately
-
-    Parameters
-    ----------
-    fields : list of field identifiers (strings) provided in config
-
-    Outputs
-    -------
-    to_split : list of field labels
-    to_collapse : string of fields above joined by commas
-    """
-    to_collapse = ",".join([f"INFO/CSQ_{field}" for field in fields])
-
-    return to_collapse
-
-
-
 def bgzip(file) -> None:
     """
     Call bgzip on a given file
@@ -61,16 +42,16 @@ def bgzip(file) -> None:
     )
 
 
-def bcftools_pre_process(input_vcf, fields) -> str:
+def bcftools_pre_process(input_vcf) -> str:
     """
-    Decompose multiple transcript annotations to individual records, and split VEP CSQ string fields for SYMBOL, Consequence and gnomADe_AF to individual INFO keys. Adds a 'CSQ_' prefix to these fields extracted from the CSQ string to stop potential conflicts with existing INFO fields.
+    Decompose multiple transcript annotations to individual records, and split
+    VEP CSQ string fields to individual INFO keys. Adds a 'CSQ_' prefix to
+    these fields to stop potential conflicts with existing INFO fields.
 
     Parameters
     ----------
     input_vcf : file
         path to VCF file to be split
-    fields : list
-        fields to split from config
 
     Returns
     -------
@@ -93,7 +74,7 @@ def bcftools_pre_process(input_vcf, fields) -> str:
     # Split out the SYMBOL, Consequence, gnomADe_AF fields from the CSQ
     # string and name them with 'CSQ_{field}' as separate INFO fields
     cmd = (
-        f"bcftools +split-vep -c {','.join(fields)} -Ou -p 'CSQ_'"
+        f"bcftools +split-vep --columns - -a CSQ -Ou -p 'CSQ_'"
         f" -d {input_vcf} -o {output_vcf}"
     )
 
@@ -158,7 +139,7 @@ def bcftools_filter(split_vcf, filter_command, filter_vcf):
 def read_in_vcf(filter_vcf):
     """
     Read in the VCF file with the pysam package and add a new header line
-    for the optimised filtering flag
+    for the MOI flag
 
     Parameters
     ----------
@@ -171,6 +152,9 @@ def read_in_vcf(filter_vcf):
         contents of the VCF file as a pysam object
     sample_name : str
         the full name of the sample
+    csq_fields_to_collapse : str
+        string containing VEP split INFO fields to remove so we don't break
+        eggd_generate_variant_workbooks which requires unsplit VEP fields
     """
     print(f"Reading in the split VCF {filter_vcf} with pysam")
 
@@ -180,13 +164,20 @@ def read_in_vcf(filter_vcf):
     # Get the name of the sample from the VCF
     sample_name = list(vcf_contents.header.samples)[0]
 
+    # Get a list of each of the VEP fields present in the VCF from the header
+    csq_string_list = vcf_contents.header.info['CSQ'].description.split('Format: ')[1].split('|')
+    # Create single comma separated string of all of them with INFO/CSQ_ prefix
+    csq_fields_to_collapse = ",".join([
+        f"INFO/CSQ_{field}" for field in csq_string_list
+    ])
+
     # Add MOI as INFO field
     vcf_contents.header.info.add(
         "MOI", ".", "String",
         "Mode of inheritance from PanelApp (simplified)"
     )
 
-    return vcf_contents, sample_name
+    return vcf_contents, sample_name, csq_fields_to_collapse
 
 
 def add_filtering_flag(vcf_contents, panel_dict) -> dict:
@@ -256,7 +247,7 @@ def write_out_flagged_vcf(flagged_vcf, gene_variant_dict, vcf_contents):
                 out_vcf.write(variant)
 
 
-def bcftools_remove_csq_annotation(input_vcf, fields):
+def bcftools_remove_csq_annotation(input_vcf, fields_to_collapse):
     """
     Remove expanded CSQ strings which were used to check rules, as having them
     expanded would break eggd_generate_variant workbook and they are still
@@ -266,8 +257,9 @@ def bcftools_remove_csq_annotation(input_vcf, fields):
     ----------
     input_vcf : str
         Name of VCF file to have CSQ annotations removed
-    fields : str
-        CSQ annotations to remove
+    fields_to_collapse : str
+        string containing VEP split INFO fields to remove so we don't break
+        eggd_generate_variant_workbooks which requires unsplit VEP CSQ fields
 
     Returns
     -------
@@ -283,7 +275,7 @@ def bcftools_remove_csq_annotation(input_vcf, fields):
     )
 
     cmd = (
-        f"bcftools annotate -x {fields} {input_vcf} -o {output_vcf}"
+        f"bcftools annotate -x {fields_to_collapse} {input_vcf} -o {output_vcf}"
     )
 
     output = subprocess.run(cmd, shell=True, capture_output=True)
@@ -308,16 +300,12 @@ def bcftools_remove_csq_annotation(input_vcf, fields):
     return output_vcf
 
 
-def add_annotation(
-    fields2split, input_vcf, panel_dict, filter_command
-    ):
+def add_annotation(input_vcf, panel_dict, filter_command):
     """
     Main function to take a VCF and add the flags required for filtering
 
     Parameters
     ----------
-    fields2split : list
-        list of VEP CSQ fields from config
     input_vcf : str
         name of the input VCF
     panel_dict : dict
@@ -329,13 +317,11 @@ def add_annotation(
     filter_vcf = f"{Path(input_vcf).stem}.filter.vcf"
     flagged_vcf = f"{Path(input_vcf).stem}.flagged.vcf"
 
-    fields2collapse = get_csq_fields(fields2split)
-
     # separate csq fields (creates split_vcf)
-    bcftools_pre_process(input_vcf, fields2split)
+    bcftools_pre_process(input_vcf)
 
     # create pysam object of vcf for flagging
-    vcf_contents, sample_name = read_in_vcf(split_vcf)
+    vcf_contents, sample_name, csq_fields_to_drop = read_in_vcf(split_vcf)
 
     # add MOI flags from config
     gene_var_dict = add_filtering_flag(
@@ -346,7 +332,7 @@ def add_annotation(
     # run bcftools filter string from config (create filter_vcf)
     bcftools_filter(flagged_vcf, filter_command, filter_vcf)
     # return csq fields to standard format
-    final_vcf = bcftools_remove_csq_annotation(filter_vcf, fields2collapse)
+    final_vcf = bcftools_remove_csq_annotation(filter_vcf, csq_fields_to_drop)
     bgzip(final_vcf)
     os.remove(split_vcf)
     os.remove(filter_vcf)
