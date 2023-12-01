@@ -1,5 +1,6 @@
 import os
 import pytest
+import re
 import sys
 
 sys.path.append(os.path.abspath(
@@ -38,14 +39,13 @@ class TestParseGenePanels():
         """
         Check raises error when same panel ID present for different panels
         """
-        expected_error = (
+        expected_error = re.escape(
             "Multiple panel IDs found for clinical indications: {'R341."
-            "1_Hereditary angioedema types I and II_G': {'', '12'}, 'R367."
-            "1_Inherited pancreatic cancer_P': {'524', '14'}}"
+            "1_Hereditary angioedema types I and II_G': ['', '12'], 'R367."
+            "1_Inherited pancreatic cancer_P': ['14', '524']}"
         )
         with pytest.raises(AssertionError, match=expected_error):
             panels.parse_genepanels(self.genepanels_tsv2)
-
 
 class TestGetPanelIDFromGenePanels():
     """
@@ -188,6 +188,29 @@ class TestTransformPanelAppDumpToDict():
         }
     ]
 
+    test_panel_dump2 = [
+        {
+            'panel_source': 'PanelApp',
+            'panel_name': 'Disorders of sex development',
+            'external_id': '',
+            'panel_version': '4.0',
+            'genes': [
+                {
+                    'transcript': None,
+                    'hgnc_id': 'HGNC:464',
+                    'confidence_level': '3',
+                    'mode_of_inheritance': 'BIALLELIC, autosomal or pseudoautosomal',
+                    'mode_of_pathogenicity': None,
+                    'penetrance': None,
+                    'gene_justification': 'PanelApp',
+                    'transcript_justification': 'PanelApp',
+                    'alias_symbols': 'MIS',
+                    'gene_symbol': 'AMH'
+                },
+            ]
+        }
+    ]
+
     def test_transform_panelapp_dump_to_dict(self):
         """
         Make sure that the two panels with no external ID are not parsed
@@ -216,6 +239,16 @@ class TestTransformPanelAppDumpToDict():
                 "PanelApp dict not created correctly when PanelApp external_id"
                 " key is missing"
         )
+
+
+    def test_transform_panelapp_dump_to_dict_when_no_panels_left(self):
+        """
+        Make sure that error raised if no panels are left after transforming
+        """
+        expected_error = ("No panels with IDs found in PanelApp dump")
+        with pytest.raises(AssertionError, match=expected_error):
+            panels.transform_panelapp_dump_to_dict(self.test_panel_dump2)
+
 
 class TestParsePanelAppDump():
     """
@@ -280,10 +313,105 @@ class TestParsePanelAppDump():
         with pytest.raises(KeyError, match=expected_error):
             panels.parse_panelapp_dump('11', self.test_panel_dict)
 
+
 class TestSimplifyMOITerms():
     """
-    _summary_
+    Test that simplify_MOI_terms which converts PanelApp MOI terms to
+    simpler categories to be added to VCF as INFO field works as expected
     """
     test_gene_dict = {
-
+        'gene1': {
+            'mode_of_inheritance': 'BIALLELIC, autosomal or pseudoautosomal',
+            'entity_type': 'gene'
+        },
+        'gene2': {
+            'mode_of_inheritance': 'MONOALLELIC, autosomal or pseudoautosomal, NOT imprinted',
+            'entity_type': 'gene'
+        },
+        'gene3': {
+            'mode_of_inheritance': 'MONOALLELIC, autosomal or pseudoautosomal, imprinted status unknown',
+            'entity_type': 'gene'
+        },
+        'gene4': {
+            'mode_of_inheritance': 'MONOALLELIC, autosomal or pseudoautosomal, maternally imprinted (paternal allele expressed)',
+            'entity_type': 'gene'
+        },
+        'gene5': {
+            'mode_of_inheritance': 'MONOALLELIC, autosomal or pseudoautosomal, paternally imprinted (maternal allele expressed)',
+            'entity_type': 'gene'
+        },
+        'gene6': {
+            'mode_of_inheritance': None,
+            'entity_type': 'gene'
+        },
+        'gene7': {
+            'mode_of_inheritance': 'BOTH monoallelic and biallelic (but BIALLELIC mutations cause a more SEVERE disease form), autosomal or pseudoautosomal',
+            'entity_type': 'gene'
+        },
+        'gene8': {
+            'mode_of_inheritance': 'BOTH monoallelic and biallelic, autosomal or pseudoautosomal',
+            'entity_type': 'gene'
+        },
+        'gene9': {
+            'mode_of_inheritance': 'MITOCHONDRIAL',
+            'entity_type': 'gene'
+        },
+        'gene10': {
+            'mode_of_inheritance': 'Other',
+            'entity_type': 'gene'
+        },
+        'gene11': {
+            'mode_of_inheritance': 'Other - please specifiy in evaluation comments',
+            'entity_type': 'gene'
+        },
+        'gene12': {
+            'mode_of_inheritance': 'Other - please specifiy in evaluation comments',
+            'entity_type': 'gene'
+        },
+        'gene13': {
+            'mode_of_inheritance': 'Other - please specify in evaluation comments',
+            'entity_type': 'gene'
+        },
+        'gene14': {
+            'mode_of_inheritance': 'Unknown',
+            'entity_type': 'gene'
+        },
+        'gene15': {
+            'mode_of_inheritance': 'X-LINKED: hemizygous mutation in males, biallelic mutations in females',
+            'entity_type': 'gene'
+        },
+        'gene16': {
+            'mode_of_inheritance': 'X-LINKED: hemizygous mutation in males, monoallelic mutations in females may cause disease (may be less severe, later onset than males)',
+            'entity_type': 'gene'
+        },
+        'gene17': {
+            'mode_of_inheritance': 'MOI we havent thought of',
+            'entity_type': 'gene'
+        }
     }
+
+    def test_simplify_MOI_terms(self):
+        """
+        Check PanelApp MOI terms simplified correctly
+        """
+
+        assert panels.simplify_MOI_terms(self.test_gene_dict) == {
+        'gene1': {'mode_of_inheritance': 'AR'},
+        'gene2': {'mode_of_inheritance': 'AD',},
+        'gene3': {'mode_of_inheritance': 'AD',},
+        'gene4': {'mode_of_inheritance': 'AD'},
+        'gene5': {'mode_of_inheritance': 'AD'},
+        'gene6': {'mode_of_inheritance': 'NONE'},
+        'gene7': {'mode_of_inheritance': 'AD/AR'},
+        'gene8': {'mode_of_inheritance': 'AD/AR'},
+        'gene9': {'mode_of_inheritance': 'MITOCHONDRIAL'},
+        'gene10': {'mode_of_inheritance': 'OTHER'},
+        'gene11': {'mode_of_inheritance': 'OTHER'},
+        'gene12': {'mode_of_inheritance': 'OTHER'},
+        'gene13': {'mode_of_inheritance': 'OTHER'},
+        'gene14': {'mode_of_inheritance': 'UNKNOWN'},
+        'gene15': {'mode_of_inheritance': 'XLR'},
+        'gene16': {'mode_of_inheritance': 'XLD'},
+        'gene17': {'mode_of_inheritance': 'NONE'}
+    }, "MOIs not simplified correctly"
+

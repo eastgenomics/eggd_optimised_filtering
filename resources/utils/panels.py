@@ -1,5 +1,4 @@
 import re
-import sys
 
 from collections import defaultdict
 
@@ -36,7 +35,7 @@ def parse_genepanels(genepanels_file):
             panel_id, clin_ind, panel, gene = line.split('\t')
             panel_data.setdefault(clin_ind, set()).add(panel_id)
 
-    duplicate_ids = {k:v for k, v in panel_data.items() if len(v) > 1}
+    duplicate_ids = {k:sorted(v) for k, v in panel_data.items() if len(v) > 1}
 
     assert not duplicate_ids, (
         f"Multiple panel IDs found for clinical indications: {duplicate_ids}"
@@ -163,6 +162,9 @@ def transform_panelapp_dump_to_dict(panel_dump):
     # Create new dict with panel ID as key
     panel_id_dict = dict(zip(panel_ids, panel_dump))
 
+    if not panel_id_dict:
+        raise AssertionError("No panels with IDs found in PanelApp dump")
+
     return panel_id_dict
 
 
@@ -229,6 +231,7 @@ def format_panel_info(panel_data) -> dict:
             if conf_level >=3:
                 panel_dict[region_name]['mode_of_inheritance'] = moi
                 panel_dict[region_name]['entity_type'] = 'region'
+
     return panel_dict
 
 
@@ -252,24 +255,27 @@ def simplify_MOI_terms(panel_dict) -> dict:
     updated_gene_dict = defaultdict(dict)
     for gene, moi_info in panel_dict.items():
         moi = moi_info.get('mode_of_inheritance')
-        xlr = "X-LINKED: hemizygous mutation in males, biallelic"
-        xld = "X-LINKED: hemizygous mutation in males, monoallelic"
-        if re.search(r"^BIALLELIC", moi):
-            updated_moi = 'AR'
-        elif re.search(r"^MONOALLELIC", moi):
-            updated_moi = 'AD'
-        elif re.search(r"^"+xlr, moi):
-            updated_moi = 'XLR'
-        elif re.search(r"^"+xld, moi):
-            updated_moi = 'XLD'
-        elif re.search(r"^BOTH", moi):
-            updated_moi = 'AD/AR'
-        elif re.search(r"^MITOCHONDRIAL", moi):
-            updated_moi = 'MITOCHONDRIAL'
-        elif re.search(r"^Other", moi):
-            updated_moi = 'OTHER'
-        elif re.search(r"^Unknown", moi):
-            updated_moi = 'UNKNOWN'
+        if moi:
+            xlr = "X-LINKED: hemizygous mutation in males, biallelic"
+            xld = "X-LINKED: hemizygous mutation in males, monoallelic"
+            if re.search(r"^BIALLELIC", moi):
+                updated_moi = 'AR'
+            elif re.search(r"^MONOALLELIC", moi):
+                updated_moi = 'AD'
+            elif re.search(r"^"+xlr, moi):
+                updated_moi = 'XLR'
+            elif re.search(r"^"+xld, moi):
+                updated_moi = 'XLD'
+            elif re.search(r"^BOTH", moi):
+                updated_moi = 'AD/AR'
+            elif re.search(r"^MITOCHONDRIAL", moi):
+                updated_moi = 'MITOCHONDRIAL'
+            elif re.search(r"^Other", moi):
+                updated_moi = 'OTHER'
+            elif re.search(r"^Unknown", moi):
+                updated_moi = 'UNKNOWN'
+            else:
+                updated_moi = 'NONE'
         else:
             updated_moi = 'NONE'
 
@@ -301,8 +307,9 @@ def get_formatted_dict(panel_string, genepanels_file, panelapp_file):
     genepanels_dict = parse_genepanels(genepanels_file)
     panel_id = get_panel_id_from_genepanels(panel_string, genepanels_dict)
     panel_dump = read_in_json(panelapp_file)
-    panel_dict = parse_panelapp_dump(panel_id, panel_dump)
-    panel_of_interest = format_panel_info(panel_dict)
-    final_panel_dict = simplify_MOI_terms(panel_of_interest)
+    panelapp_dict = transform_panelapp_dump_to_dict(panel_dump)
+    single_panel_dict = parse_panelapp_dump(panel_id, panelapp_dict)
+    formatted_single_panel = format_panel_info(single_panel_dict)
+    final_panel_dict = simplify_MOI_terms(formatted_single_panel)
 
     return final_panel_dict
