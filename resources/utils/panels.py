@@ -315,14 +315,10 @@ def get_formatted_dict(panel_string, genepanels_file, panelapp_file):
     # and parse out the gene and region info
     genepanels_dict = parse_genepanels(genepanels_file)
     panel_id = get_panel_id_from_genepanels(panel_string, genepanels_dict)
-    print("panel id", panel_id)
     panel_dump = read_in_json(panelapp_file)
     panelapp_dict = transform_panelapp_dump_to_dict(panel_dump)
     single_panel_dict = parse_panelapp_dump(panel_id, panelapp_dict)
-    print("Single panel dict", single_panel_dict)
     formatted_single_panel = format_panel_info(single_panel_dict)
-    print("Formatted single panel", formatted_single_panel)
     final_panel_dict = simplify_MOI_terms(formatted_single_panel)
-    print("Final panel dict", final_panel_dict)
 
     return final_panel_dict
