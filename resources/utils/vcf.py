@@ -219,7 +219,7 @@ def add_filtering_flag(vcf_contents, panel_dict) -> dict:
             if all([gene_present, gene_moi]):
                 variant.info['MOI'] = gene_moi
             else:
-                variant.info['MOI'] = 'Unknown'
+                variant.info['MOI'] = 'UNKNOWN'
 
     return gene_variant_dict
 

@@ -32,7 +32,7 @@ class TestCheckPanelString():
     multiple_panels_multiple_hgncs_after = 'R49.3_Beckwith-Wiedemann syndrome_G;R228.1_Tuberous sclerosis_G;_HGNC:16627;_HGNC:795'
     multiple_panels_multiple_hgncs_inbetween = 'R49.3_Beckwith-Wiedemann syndrome_G;_HGNC:16627;R228.1_Tuberous sclerosis_G;_HGNC:795'
 
-    def test_just_multiple_hgncs(self):
+    def test_check_panel_string_just_multiple_hgncs(self):
         """
         _summary_
         """
@@ -40,3 +40,5 @@ class TestCheckPanelString():
             check_panel_string(self.multiple_panels_multiple_hgncs_before)
 
 
+    def test_check_panel_string_only_hgncs(self):
+        assert check_panel_string(self.just_multiple_hgncs) == ''

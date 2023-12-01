@@ -35,12 +35,14 @@ def parse_genepanels(genepanels_file):
             panel_id, clin_ind, panel, gene = line.split('\t')
             panel_data.setdefault(clin_ind, set()).add(panel_id)
 
+    # Get any panels which have more than 1 PanelApp ID in genepanels file
     duplicate_ids = {k:sorted(v) for k, v in panel_data.items() if len(v) > 1}
 
     assert not duplicate_ids, (
         f"Multiple panel IDs found for clinical indications: {duplicate_ids}"
     )
 
+    # Warn any panels without a panel ID (column in TSV is empty)
     no_panel_id = {k for k, v in panel_data.items() if v == {''}}
 
     if no_panel_id:
@@ -51,7 +53,7 @@ def parse_genepanels(genepanels_file):
     return panel_data
 
 
-def get_panel_id_from_genepanels(panel_string, genepanels_dict) -> str:
+def get_panel_id_from_genepanels(panel_string, genepanels_dict):
     """
     Get the panel ID from the genepanels file based on the clinical
     indication text
@@ -68,6 +70,7 @@ def get_panel_id_from_genepanels(panel_string, genepanels_dict) -> str:
     panel_id : str
         ID of the panel of interest, e.g. '130'
     """
+    panel_id = None
     # Get the set (containing panel ID) for that panel string
     panel_set = genepanels_dict.get(panel_string)
     if panel_set:
@@ -82,9 +85,10 @@ def get_panel_id_from_genepanels(panel_string, genepanels_dict) -> str:
         )
 
     else:
-        raise KeyError(
-            "The panel string was not found in the genepanels file: "
-            f"{panel_string}"
+        print(
+            f"WARNING: The panel string given {panel_string} was not found in "
+            "the genepanels file. This is expected if only HGNCs have been "
+            "entered, but no MOI-specific filtering will be performed"
         )
 
     return panel_id
@@ -187,8 +191,10 @@ def parse_panelapp_dump(panel_id, panelapp_dict):
     my_panel = panelapp_dict.get(panel_id)
 
     if not my_panel:
-        raise KeyError(
-            f"The panel ID {panel_id} was not found in the PanelApp JSON dump"
+        print(
+            f"WARNING: The panel ID {panel_id} was not found in the PanelApp "
+            "JSON dump. This is expected if only HGNCs were given, otherwise"
+            " please check that the panel ID is correct"
         )
 
     return my_panel
@@ -210,27 +216,30 @@ def format_panel_info(panel_data) -> dict:
         dict with each gene, its symbol, MOI and entity type
     """
     panel_dict = defaultdict(dict)
-    genes = panel_data.get('genes')
-    regions = panel_data.get('regions')
-    if genes:
-        for gene in genes:
-            gene_symbol = gene.get('gene_symbol')
-            moi = gene.get('mode_of_inheritance')
-            conf_level = int(gene.get('confidence_level'))
-            if conf_level >= 3:
-                panel_dict[gene_symbol]['mode_of_inheritance'] = moi
-                panel_dict[gene_symbol]['entity_type'] = 'gene'
-    if regions:
-        for region in regions:
-            region_name = region.get('name')
-            conf_level = int(region.get('confidence_level'))
-            moi = region.get('mode_of_inheritance')
-            # conf_level 3 indicates sufficient gene-disease association
-            #  evidence for use in variant interpretation (3 is green, 2
-            #  amber, 1 red)
-            if conf_level >=3:
-                panel_dict[region_name]['mode_of_inheritance'] = moi
-                panel_dict[region_name]['entity_type'] = 'region'
+    if panel_data:
+        genes = panel_data.get('genes')
+        regions = panel_data.get('regions')
+        if genes:
+            for gene in genes:
+                gene_symbol = gene.get('gene_symbol')
+                moi = gene.get('mode_of_inheritance')
+                conf_level = int(gene.get('confidence_level'))
+                if conf_level >= 3:
+                    panel_dict[gene_symbol]['mode_of_inheritance'] = moi
+                    panel_dict[gene_symbol]['entity_type'] = 'gene'
+        if regions:
+            for region in regions:
+                region_name = region.get('name')
+                conf_level = int(region.get('confidence_level'))
+                moi = region.get('mode_of_inheritance')
+                # conf_level 3 indicates sufficient gene-disease association
+                # evidence for use in variant interpretation (3 is green, 2
+                # amber, 1 red)
+                if conf_level >=3:
+                    panel_dict[region_name]['mode_of_inheritance'] = moi
+                    panel_dict[region_name]['entity_type'] = 'region'
+    else:
+        print("WARNING - panel dictionary from PanelApp is empty")
 
     return panel_dict
 
@@ -306,10 +315,14 @@ def get_formatted_dict(panel_string, genepanels_file, panelapp_file):
     # and parse out the gene and region info
     genepanels_dict = parse_genepanels(genepanels_file)
     panel_id = get_panel_id_from_genepanels(panel_string, genepanels_dict)
+    print("panel id", panel_id)
     panel_dump = read_in_json(panelapp_file)
     panelapp_dict = transform_panelapp_dump_to_dict(panel_dump)
     single_panel_dict = parse_panelapp_dump(panel_id, panelapp_dict)
+    print("Single panel dict", single_panel_dict)
     formatted_single_panel = format_panel_info(single_panel_dict)
+    print("Formatted single panel", formatted_single_panel)
     final_panel_dict = simplify_MOI_terms(formatted_single_panel)
+    print("Final panel dict", final_panel_dict)
 
     return final_panel_dict

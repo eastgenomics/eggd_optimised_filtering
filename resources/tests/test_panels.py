@@ -3,6 +3,8 @@ import pytest
 import re
 import sys
 
+from collections import defaultdict
+
 sys.path.append(os.path.abspath(
     os.path.join(os.path.realpath(__file__), '../../')
 ))
@@ -46,6 +48,7 @@ class TestParseGenePanels():
         )
         with pytest.raises(AssertionError, match=expected_error):
             panels.parse_genepanels(self.genepanels_tsv2)
+
 
 class TestGetPanelIDFromGenePanels():
     """
@@ -109,15 +112,25 @@ class TestGetPanelIDFromGenePanels():
                 'R23_Test_CI_P', self.test_panels_dict
             )
 
-    def test_when_panel_string_doesnt_exist_in_dict(self):
+    def test_when_panel_string_doesnt_exist_in_genepanels_dict(self, capsys):
         """
-        KeyError should be raised if panel name not found in dict
+        Check that warning is printed if panel/HGNCs given which are not
+        in the dict
         """
-        expected_error = (
-            "The panel string was not found in the genepanels file: R22"
+        expected_warning = (
+            "WARNING: The panel string given None was not found"
+            " in the genepanels file. This is expected if only HGNCs have been"
+            " entered, but no MOI-specific filtering will be performed"
         )
-        with pytest.raises(KeyError, match=expected_error):
-            panels.get_panel_id_from_genepanels('R22', self.test_panels_dict)
+        panels.get_panel_id_from_genepanels(
+            None, self.test_panels_dict
+        )
+        stdout = capsys.readouterr().out
+
+        assert expected_warning in stdout, (
+            "Warning not given correctly if panel/HGNCs given which were not"
+            " in genepanels file "
+        )
 
 
 class TestTransformPanelAppDumpToDict():
@@ -126,6 +139,8 @@ class TestTransformPanelAppDumpToDict():
     panel dictionaries and converts it to a dict where the panel IDs are keys,
     works correctly
     """
+    # minimal version of PanelApp JSON dump that would be passed
+    # into the function to be converted to a dict
     test_panel_dump = [
         {
             'panel_source': 'PanelApp',
@@ -303,21 +318,164 @@ class TestParsePanelAppDump():
             }
         ), "Panel not obtained correctly from panel dict when key exists"
 
-    def test_parse_panelapp_dump_id_not_exists(self):
+    def test_parse_panelapp_dump_id_not_exists(self, capsys):
         """
         Check error raised correctly if panel ID not in dict
         """
-        expected_error = (
-            'The panel ID 11 was not found in the PanelApp JSON dump'
+        panels.parse_panelapp_dump(None, self.test_panel_dict)
+        stdout = capsys.readouterr().out
+        expected_warning = (
+            "WARNING: The panel ID None was not found in the PanelApp "
+            "JSON dump. This is expected if only HGNCs were given, otherwise"
+            " please check that the panel ID is correct"
         )
-        with pytest.raises(KeyError, match=expected_error):
-            panels.parse_panelapp_dump('11', self.test_panel_dict)
+        assert expected_warning in stdout, (
+            "Warning not printed correctly if empty panel ID given"
+        )
+
+    def test_parse_panelapp_dump_when_dump_empty(self, capsys):
+        """
+        Check warning raised if panel dict empty
+        """
+        panels.parse_panelapp_dump('9', self.test_empty_panel_dict)
+        stdout = capsys.readouterr().out
+        expected_warning = (
+            "WARNING: The panel ID 9 was not found in the PanelApp "
+            "JSON dump. This is expected if only HGNCs were given, otherwise"
+            " please check that the panel ID is correct"
+        )
+        assert expected_warning in stdout, (
+            "Warning not printed correctly if panel ID given but PanelApp"
+            " is empty"
+        )
+
+class TestFormatPanelInfo():
+    """
+    Test that the format_panel_info function works correctly
+    """
+    test_one_gene_conf_level_below_3 = {
+        'panel_source': 'PanelApp',
+        'panel_name': 'Severe early-onset obesity',
+        'external_id': '130',
+        'panel_version': '4.0',
+        'genes': [{
+            'transcript': None,
+            'hgnc_id': 'HGNC:428',
+            'confidence_level': '1',
+            'mode_of_inheritance': 'BIALLELIC, autosomal or pseudoautosomal',
+            'mode_of_pathogenicity': None,
+            'penetrance': 'Complete',
+            'gene_justification': 'PanelApp',
+            'transcript_justification': 'PanelApp',
+            'alias_symbols': 'KIAA0328',
+            'gene_symbol': 'ALMS1'
+        }]
+    }
+
+    test_format_panel_dict_gene_and_region = {
+        'panel_source': 'PanelApp',
+        'panel_name': 'Severe early-onset obesity',
+        'external_id': '130',
+        'panel_version': '4.0',
+        'genes': [{
+            'transcript': None,
+            'hgnc_id': 'HGNC:13210',
+            'confidence_level': '3',
+            'mode_of_inheritance': 'BIALLELIC, autosomal or pseudoautosomal',
+            'mode_of_pathogenicity': None,
+            'penetrance': 'Complete',
+            'gene_justification': 'PanelApp',
+            'transcript_justification': 'PanelApp',
+            'alias_symbols': 'RP55',
+            'gene_symbol': 'ARL6'
+        },
+        {
+            'transcript': None,
+            'hgnc_id': 'HGNC:13210',
+            'confidence_level': '3',
+            'mode_of_inheritance': None,
+            'mode_of_pathogenicity': None,
+            'penetrance': 'Complete',
+            'gene_justification': 'PanelApp',
+            'transcript_justification': 'PanelApp',
+            'alias_symbols': 'RP55',
+            'gene_symbol': 'TEST'
+        }
+        ],
+        'regions': [{
+            'confidence_level': '3',
+            'mode_of_inheritance': 'MONOALLELIC, autosomal or pseudoautosomal, imprinted status unknown',
+            'mode_of_pathogenicity': None,
+            'penetrance': None,
+            'name': '15q11q13 recurrent (PWS/AS) region (BP1-BP3, Class 1) Loss',
+            'chrom': '15',
+            'start_37': None,
+            'end_37': None,
+            'start_38': 22782170,
+            'end_38': 28134728,
+            'type': 'CNV',
+            'variant_type': 'cnv_loss',
+            'required_overlap': 60,
+            'haploinsufficiency': '3',
+            'triplosensitivity': None,
+            'justification': 'PanelApp'
+        }]
+    }
+
+    test_panel_dict_not_exists = None
+
+    def test_format_panel_info_if_no_genes_above_conf_3(self):
+        """
+        Check empty dict created if no genes above conf 3 found
+        """
+        assert not panels.format_panel_info(
+            self.test_one_gene_conf_level_below_3
+        ), (
+            "Formatted panel dict not created correctly when no genes with "
+            "confidence level above 3"
+        )
+
+    def test_format_panel_info_if_genes_and_regions_above_conf_3(self):
+        """
+        Check empty dict created if no genes above conf 3 found
+        """
+        assert panels.format_panel_info(
+            self.test_format_panel_dict_gene_and_region
+        ) == {
+            'ARL6': {
+                'mode_of_inheritance': 'BIALLELIC, autosomal or pseudoautosomal',
+                'entity_type': 'gene'
+            },
+            'TEST': {
+                'mode_of_inheritance': None,
+                'entity_type': 'gene'
+            },
+            '15q11q13 recurrent (PWS/AS) region (BP1-BP3, Class 1) Loss': {
+                'mode_of_inheritance': 'MONOALLELIC, autosomal or pseudoautosomal, imprinted status unknown',
+                'entity_type': 'region'
+            }
+        }, (
+            "Formatted panel dict not created correctly when genes and regions"
+            " above conf level 3 exist"
+        )
+
+    def test_if_panel_dict_not_exists(self, capsys):
+        """
+        Check warning printed correctly if trying to format empty dict
+        """
+        panels.format_panel_info(self.test_panel_dict_not_exists)
+        stdout = capsys.readouterr().out
+        expected_warning = ("WARNING - panel dictionary from PanelApp is empty")
+        assert expected_warning in stdout, (
+            "Warning not printed correctly if empty dict given to "
+            "format_panel_info"
+        )
 
 
 class TestSimplifyMOITerms():
     """
-    Test that simplify_MOI_terms which converts PanelApp MOI terms to
-    simpler categories to be added to VCF as INFO field works as expected
+    Test that simplify_MOI_terms function (which converts PanelApp MOI terms to
+    simpler categories to be added to VCF as INFO fields) works as expected
     """
     test_gene_dict = {
         'gene1': {
@@ -390,11 +548,13 @@ class TestSimplifyMOITerms():
         }
     }
 
+    test_empty_dict_if_only_hgncs = defaultdict(dict)
+
     def test_simplify_MOI_terms(self):
         """
-        Check PanelApp MOI terms simplified correctly
+        Check simplify_MOI_terms function takes dict and simplifies the
+        PanelApp MOI terms simplified correctly, including when MOI is None
         """
-
         assert panels.simplify_MOI_terms(self.test_gene_dict) == {
         'gene1': {'mode_of_inheritance': 'AR'},
         'gene2': {'mode_of_inheritance': 'AD',},
@@ -415,3 +575,12 @@ class TestSimplifyMOITerms():
         'gene17': {'mode_of_inheritance': 'NONE'}
     }, "MOIs not simplified correctly"
 
+
+    def test_simplify_MOI_terms_if_dict_is_none(self):
+        """
+        Test an empty dict is given back if an empty dict is given
+        """
+        assert panels.simplify_MOI_terms(self.test_empty_dict_if_only_hgncs) == defaultdict(dict), (
+            "Empty dict not returned correctly after MOI simplification"
+            "If None given to function"
+        )

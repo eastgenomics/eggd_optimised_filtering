@@ -94,16 +94,18 @@ def check_panel_string(panel_string):
         f"More than one panel given: {panels_from_string}"
     )
 
+    return panels_from_string
+
 
 def main():
     args = parse_args()
     filter_string = args.filter_string.replace("\!~", "!~")
-    check_panel_string(args.panel_string)
+    panels_from_string = check_panel_string(args.panel_string)
     bcftools_filter_command = file_utils.unescape_bcftools_command(
         filter_string
     )
     panel_dict = panels.get_formatted_dict(
-        args.panel_string, args.genepanels, args.panel_dump
+        panels_from_string, args.genepanels, args.panel_dump
     )
     vcf.add_annotation(
         args.input_vcf, panel_dict, bcftools_filter_command
