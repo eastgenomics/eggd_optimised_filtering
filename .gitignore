@@ -33,7 +33,8 @@ optimised_filtered_2/
 *.tsv
 *.tsv#
 
-!test_genepanels.tsv
+!test_genepanels_bad_format.tsv
+!test_genepanels_formatted_correctly.tsv
 
 # JSON
 *.json
