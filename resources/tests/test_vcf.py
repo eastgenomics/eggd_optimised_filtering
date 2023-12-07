@@ -1,6 +1,10 @@
-# from utils import vcf
+import os
+import sys
 
-# from tests import TEST_DATA_DIR
+sys.path.append(os.path.abspath(
+    os.path.join(os.path.realpath(__file__), '../../')
+))
 
-# class TestGetCSQFields():
-#     pass
+from tests import TEST_DATA_DIR
+from utils import vcf
+

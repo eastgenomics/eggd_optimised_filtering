@@ -582,5 +582,5 @@ class TestSimplifyMOITerms():
         """
         assert panels.simplify_MOI_terms(self.test_empty_dict_if_only_hgncs) == defaultdict(dict), (
             "Empty dict not returned correctly after MOI simplification"
-            "If None given to function"
+            " when empty dict given"
         )
