@@ -1,3 +1,6 @@
+"""
+Functions related to gene panels and obtaining information from PanelApp
+"""
 import re
 
 from collections import defaultdict
@@ -8,7 +11,7 @@ from .file_utils import read_in_json
 def parse_genepanels(genepanels_file):
     """
     Parse the genepanels file to make a dict mapping each clinical indication
-    to a PanelApp panel ID. This is so we can search the PanelApp dump by
+    to PanelApp panel ID. This is so we can search the JSON PanelApp dump by
     panel ID later
 
     Parameters
@@ -21,7 +24,12 @@ def parse_genepanels(genepanels_file):
     panel_data : dict
         dict containing each clinical ind with the panel ID as value
 
-    Example format:
+    Raises
+    ------
+    AssertionError
+        Raised if multiple panel IDs are found for one clinical indication
+
+    Example return format:
 
     {
         'R136.1_Primary lymphoedema_P': {'65'},
@@ -30,6 +38,8 @@ def parse_genepanels(genepanels_file):
     """
     panel_data = {}
 
+    # Open the file and read the TSV into a dict with each clinical indication
+    # and a set of the panel IDs associated with it
     with open(genepanels_file, encoding="utf-8") as gp_file:
         for line in gp_file:
             panel_id, clin_ind, panel, gene = line.split('\t')
@@ -38,25 +48,25 @@ def parse_genepanels(genepanels_file):
     # Get any panels which have more than 1 PanelApp ID in genepanels file
     duplicate_ids = {k:sorted(v) for k, v in panel_data.items() if len(v) > 1}
 
+    # Raise error if multiple panel IDs exist for one indication, as this
+    # could indicate errors across the genepanels TSV
     assert not duplicate_ids, (
         f"Multiple panel IDs found for clinical indications: {duplicate_ids}"
     )
 
-    # Warn any panels without a panel ID (column in TSV is empty)
-    no_panel_id = {k for k, v in panel_data.items() if v == {''}}
-
-    if no_panel_id:
+    # Print warning for any panels without a panel ID (column in TSV is empty)
+    panels_with_no_id = {k for k, v in panel_data.items() if v == {''}}
+    if panels_with_no_id:
         print(
             "Warning: the following panels have no panel ID found: "
-            f"{no_panel_id}")
+            f"{panels_with_no_id}")
 
     return panel_data
 
 
 def get_panel_id_from_genepanels(panel_string, genepanels_dict):
     """
-    Get the panel ID from the genepanels file based on the clinical
-    indication text
+    Get the panel ID from the genepanels file based on the panel string given
 
     Parameters
     ----------
@@ -71,10 +81,11 @@ def get_panel_id_from_genepanels(panel_string, genepanels_dict):
         ID of the panel of interest, e.g. '130'
     """
     panel_id = None
-    # Get the set (containing panel ID) for that panel string
+    # Get the set (i.e. panel ID) for that panel string
     panel_set = genepanels_dict.get(panel_string)
+    # If panel ID exists for the panel string
     if panel_set:
-        panel_ids = [panel_id for panel_id in panel_set]
+        panel_ids = list(panel_set)
         assert len(panel_ids) < 2, (
             f"Multiple panel IDs found for panel string: {panel_string}"
         )
@@ -102,13 +113,17 @@ def transform_panelapp_dump_to_dict(panel_dump):
     Parameters
     ----------
     panel_dump : list
-        PanelApp dump as list of dicts, one with info for each panel
+        PanelApp dump as list of dicts, one for each panel
 
     Returns
     -------
     panel_id_dict : dict
         dict where the PanelApp ID of the panel is the key
 
+    Raises
+    ------
+    AssertionError
+        Raised if no panels with IDs are found in the dump
     [{
         'panel_source': 'PanelApp',
         'panel_name': 'Stickler syndrome',
@@ -154,7 +169,7 @@ def transform_panelapp_dump_to_dict(panel_dump):
             }, ..
     }
     """
-    # Get list of panel IDs
+    # Get list of all the panel IDs for zipping
     panel_ids = []
     for panel in panel_dump:
         panel_id = panel.get('external_id')
@@ -166,6 +181,7 @@ def transform_panelapp_dump_to_dict(panel_dump):
     # Create new dict with panel ID as key
     panel_id_dict = dict(zip(panel_ids, panel_dump))
 
+    # Raise error if the panel ID dict is empty
     if not panel_id_dict:
         raise AssertionError("No panels with IDs found in PanelApp dump")
 

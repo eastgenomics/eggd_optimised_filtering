@@ -1,3 +1,6 @@
+"""
+Functions related to processing and reading in the VCF
+"""
 import os
 import subprocess
 
@@ -165,7 +168,9 @@ def read_in_vcf(filter_vcf):
     sample_name = list(vcf_contents.header.samples)[0]
 
     # Get a list of each of the VEP fields present in the VCF from the header
-    csq_string_list = vcf_contents.header.info['CSQ'].description.split('Format: ')[1].split('|')
+    csq_string_list = vcf_contents.header.info['CSQ'].description.split(
+        'Format: '
+    )[1].split('|')
     # Create single comma separated string of all of them with INFO/CSQ_ prefix
     csq_fields_to_collapse = ",".join([
         f"INFO/CSQ_{field}" for field in csq_string_list

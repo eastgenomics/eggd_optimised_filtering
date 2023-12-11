@@ -14,7 +14,7 @@ from utils import panels
 
 TEST_GENEPANELS_CORRECT_FORMAT = "test_genepanels_formatted_correctly.tsv"
 TEST_GENEPANELS_BAD_FORMAT = "test_genepanels_bad_format.tsv"
-TEST_PANELDUMP = ""
+
 
 class TestParseGenePanels():
     """
@@ -52,7 +52,7 @@ class TestParseGenePanels():
 
 class TestGetPanelIDFromGenePanels():
     """
-    Test the get_panel_id_from_genepanels function which takes
+    Test the get_panel_id_from_genepanels() function which takes
     a panel string (clinical indication) and gets the PanelApp ID for the panel
     """
     test_panels_dict = {
@@ -79,7 +79,8 @@ class TestGetPanelIDFromGenePanels():
 
     def test_get_panel_id_for_ci_with_multiple_panel_ids(self):
         """
-        Assertion error should be raised if > 1 panel ID found
+        Check assertion error is raised if > 1 panel ID found for the panel
+        string
         """
         expected_error = "Multiple panel IDs found for panel string: R104.3_Skeletal dysplasia_P"
         with pytest.raises(AssertionError, match=expected_error):
@@ -89,7 +90,7 @@ class TestGetPanelIDFromGenePanels():
 
     def test_get_panel_id_when_panel_id_is_empty_string(self):
         """
-        Assertion error should be raised if panel ID is just '""'
+        Check assertion error is raised if panel ID is empty, i.e. just ''
         """
         expected_error = (
             "The clinical indication R97.1_Thrombophilia_P does not have a "
@@ -128,7 +129,7 @@ class TestGetPanelIDFromGenePanels():
         stdout = capsys.readouterr().out
 
         assert expected_warning in stdout, (
-            "Warning not given correctly if panel/HGNCs given which were not"
+            "Warning not raised correctly if panel/HGNCs given which were not"
             " in genepanels file "
         )
 
