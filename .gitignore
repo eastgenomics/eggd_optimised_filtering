@@ -2,6 +2,9 @@
 *.vcf
 *.vcf.gz
 
+!126560840-23326Q0015-23NGWES4-9526-F-103698_markdup_recalibrated_Haplotyper_annotated.vcf.gz
+!126560840-23326Q0015-23NGWES4-9526-F-103698_markdup_recalibrated_Haplotyper_annotated.vcf.split.vcf
+
 # Sample-specific things
 sanitise_shire_output.py
 
