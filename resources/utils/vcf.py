@@ -74,8 +74,8 @@ def bcftools_pre_process(input_vcf) -> str:
         shell=True,
         capture_output=True
     )
-    # Split out the SYMBOL, Consequence, gnomADe_AF fields from the CSQ
-    # string and name them with 'CSQ_{field}' as separate INFO fields
+    # Split out all fields from the CSQ string and name them with
+    # 'CSQ_{field}' as separate INFO fields
     cmd = (
         f"bcftools +split-vep --columns - -a CSQ -Ou -p 'CSQ_'"
         f" -d {input_vcf} -o {output_vcf}"
@@ -171,6 +171,7 @@ def read_in_vcf(vcf_file):
     csq_string_list = vcf_contents.header.info['CSQ'].description.split(
         'Format: '
     )[1].split('|')
+
     # Create single comma separated string of all of them with INFO/CSQ_ prefix
     csq_fields_to_collapse = ",".join([
         f"INFO/CSQ_{field}" for field in csq_string_list
@@ -185,7 +186,7 @@ def read_in_vcf(vcf_file):
     return vcf_contents, sample_name, csq_fields_to_collapse
 
 
-def add_filtering_flag(vcf_contents, panel_dict) -> dict:
+def add_MOI_field(vcf_contents, panel_dict) -> dict:
     """
     Add the flags to each variant which will be used for filtering
 
@@ -329,9 +330,7 @@ def add_annotation(input_vcf, panel_dict, filter_command):
     vcf_contents, sample_name, csq_fields_to_drop = read_in_vcf(split_vcf)
 
     # add MOI flags from config
-    gene_var_dict = add_filtering_flag(
-        vcf_contents, panel_dict
-    )
+    gene_var_dict = add_MOI_field(vcf_contents, panel_dict)
     write_out_flagged_vcf(flagged_vcf, gene_var_dict, vcf_contents)
 
     # run bcftools filter string from config (create filter_vcf)

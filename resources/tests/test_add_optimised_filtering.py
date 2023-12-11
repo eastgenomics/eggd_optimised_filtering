@@ -52,7 +52,7 @@ class TestCheckPanelString():
              'More than one panel given: R49.3_Beckwith-Wiedemann syndrome_G;R228.1_Tuberous sclerosis_G')
         ]
     )
-    def test_check_panel_string_multiple_panels_give(
+    def test_check_panel_string_multiple_panels_given(
         self, test_input_bad, expected_warning
     ):
         """

@@ -1,8 +1,9 @@
 import os
+import pytest
 import sys
 import unittest
 
-from unittest.mock import Mock, MagicMock, patch
+from unittest.mock import Mock, patch
 
 sys.path.append(os.path.abspath(
     os.path.join(os.path.realpath(__file__), '../../')
@@ -16,55 +17,113 @@ TEST_ANNOTATED_VCF = (
     "126560840-23326Q0015-23NGWES4-9526-F-103698_markdup_recalibrated_"
     "Haplotyper_annotated.vcf.gz"
 )
+TEST_SPLIT_VCF = (
+    "126560840-23326Q0015-23NGWES4-9526-F-103698_markdup_recalibrated_"
+    "Haplotyper_annotated.vcf.split.vcf"
+)
 
-# class TestBgzip(unittest.TestCase):
-#     """
-#     Test the function which uses subprocess to bgzip a file
-#     """
-#     @patch('vcf.subprocess.run')
-#     def test_bgzip_called_correctly(self, mock_vcf):
-#         """
-#         Test
-#         """
-#         # process_mock = Mock()
-#         # attrs = {'communicate.return_value'}
-#         # mock_stdout = MagicMock()
-#         # mock_stdout.configure_mock
-#         # mocker.patch.object(CheckInputs, "__init__", return_value=None)
-#         mock_response = Mock()
-#         mock_response.return_code = 
+class TestBgzip(unittest.TestCase):
+    """
+    Test the function which uses subprocess to bgzip a file
+    """
+    annotated_split_vcf = os.path.join(TEST_DATA_DIR, TEST_SPLIT_VCF)
+    def test_bgzip_output_file_exists(self):
+        """
+        Test that gzipped output file exists
+        """
+        vcf.bgzip(self.annotated_split_vcf)
+        assert os.path.exists(os.path.join(TEST_DATA_DIR,
+            "126560840-23326Q0015-23NGWES4-9526-F-103698_markdup_"
+            "recalibrated_Haplotyper_annotated.vcf.split.vcf.gz"
+        )), "gzipped file does not exist"
 
-#         mock_vcf.return_value = mock_response
+        # Remove the gzipped VCF
+        os.remove(os.path.join(
+            TEST_DATA_DIR,
+            "126560840-23326Q0015-23NGWES4-9526-F-103698_markdup_"
+            "recalibrated_Haplotyper_annotated.vcf.split.vcf.gz"
+        ))
 
-#         vcf.bgzip(mock_vcf)
-#         mock_vcf.assert_called_with()
+    @patch('utils.vcf.subprocess.run')
+    def test_bgzip_raises_error_if_return_code_not_zero(self, mock_vcf):
+        """
+        Test assertion error raised if return code of bgzip not zero
+        """
+        mock_vcf.returncode = 1
+
+        with pytest.raises(AssertionError):
+            vcf.bgzip(mock_vcf)
 
 
 class TestBcftoolsPreProcess():
-    pass
+    """
+    Test the function which uses subprocess to split VEP CSQ fields to
+    separate INFO fields
+    """
+    annotated_vcf = os.path.join(TEST_DATA_DIR, TEST_ANNOTATED_VCF)
+    def test_bcftools_pre_process_variant_count(self, capsys):
+        """
+        Test variant counts before and after bcftools +split-vep
+        are printed as expected
+        """
+        output_vcf = vcf.bcftools_pre_process(self.annotated_vcf)
+        stdout = capsys.readouterr().out
+        assert 'Total lines before splitting: 255' in stdout, (
+            "Variant counts pre-split not included as expected"
+        )
+        assert 'Total lines after splitting: 255' in stdout, (
+            "Variant counts after split not included as expected"
+        )
 
+        assert output_vcf == (
+            '126560840-23326Q0015-23NGWES4-9526-F-103698_markdup_recalibrated'
+            '_Haplotyper_annotated.vcf.split.vcf'
+        ), "Output VCF from bcftools_pre_process not named as expected"
 
-class TestBcftoolsFilter():
-    pass
+        os.remove(
+            '126560840-23326Q0015-23NGWES4-9526-F-103698_markdup_recalibrated'
+            '_Haplotyper_annotated.vcf.split.vcf'
+        )
+
+    @patch('utils.vcf.subprocess.run')
+    def test_bcftools_pre_process_raises_error_if_return_code_not_zero(
+            self, mock_vcf
+    ):
+        """
+        Test bcftools pre-process function which splits VEP vcf
+        raises assertion error if return code not zero
+        """
+        mock_vcf.returncode = 124
+
+        with pytest.raises(AssertionError):
+            vcf.bcftools_pre_process(mock_vcf)
+
 
 class TestReadInVCF():
     """
-    Test the VCF is read in with pysam correctly
+    Test the VCF (with split VCF fields) is read in with pysam correctly
     """
-    annotated_control_vcf = os.path.join(TEST_DATA_DIR, TEST_ANNOTATED_VCF)
-    def test_read_in_vcf(self):
+    annotated_split_vcf = os.path.join(TEST_DATA_DIR, TEST_SPLIT_VCF)
+
+    # Read in the control VCF with pysam and get sample name and CSQ fields
+    vcf_contents, sample_name, csq_fields_to_collapse = vcf.read_in_vcf(
+        annotated_split_vcf
+    )
+
+    def test_read_in_vcf_sample_parsed_correctly(self):
         """
         Check VCF read in to pysam correctly
         """
-        vcf_contents, sample_name, csq_fields_to_collapse = vcf.read_in_vcf(
-            self.annotated_control_vcf
-        )
 
         # Check sample name parsed correctly
-        assert sample_name == '126560840-23326Q0015-23NGWES4-9526-F-103698'
-        # Check the VEP fields are parsed and converted to fields to be
-        # collapsed later correctly
-        assert csq_fields_to_collapse == (
+        assert self.sample_name == '126560840-23326Q0015-23NGWES4-9526-F-103698'
+
+    def test_read_in_vcf_fields_to_collapse_parsed_correctly(self):
+        """
+        Check the VEP fields are parsed and converted to fields to be
+        collapsed later correctly
+        """
+        assert self.csq_fields_to_collapse == (
             'INFO/CSQ_Allele,INFO/CSQ_SYMBOL,INFO/CSQ_HGNC_ID,INFO/'
             'CSQ_VARIANT_CLASS,INFO/CSQ_Consequence,INFO/CSQ_IMPACT,INFO/'
             'CSQ_EXON,INFO/CSQ_INTRON,INFO/CSQ_Feature,INFO/CSQ_HGVSc,INFO/'
@@ -95,27 +154,86 @@ class TestReadInVCF():
             'CSQ_SpliceAI_pred_DP_DL,INFO/CSQ_REVEL,INFO/CSQ_CADD_PHRED'
         )
 
-        assert vcf_contents.is_vcf
-
+    def test_read_in_vcf_adds_info_header_correctly(self):
+        """
+        Test that the MOI INFO tag is added as a new header line as expected
+        """
         # Get all of the pysam header records
         vcf_header_items = [
-            record.items() for record in vcf_contents.header.records
+            record.values() for record in self.vcf_contents.header.records
         ]
 
         assert [
-            ('ID', 'MOI'), ('Number', '.'), ('Type', 'String'),
-            ('Description', '"Mode of inheritance from PanelApp (simplified)"'),
-            ('IDX', '68')
+            'MOI', '.', 'String',
+            '"Mode of inheritance from PanelApp (simplified)"', '131'
         ] in vcf_header_items, "MOI not added to header correctly"
 
 
-class TestAddFilteringFlag():
-    pass
+class TestAddMOIFlag():
+    """
+    Test that filtering flag added to variants correctly
+    """
+    vcf_contents, _, _ = vcf.read_in_vcf(
+        os.path.join(TEST_DATA_DIR, TEST_SPLIT_VCF)
+    )
+
+    test_panel_dict =  {'POMC': {'mode_of_inheritance': 'AR'}}
+
+    gene_variant_dict = vcf.add_MOI_field(vcf_contents, test_panel_dict)
+
+    def test_add_MOI_check_MOI_added_correctly_for_present_gene(self):
+        """
+        Assert that the 2 variants present in POMC in the test VCF both
+        have 'AR' as their MOI
+        """
+        assert [
+            record.info['MOI'] for record in self.gene_variant_dict.get('POMC')
+        ] == [('AR', ), ('AR',)], (
+            "MOI not added correctly as AR for the two variants in POMC"
+        )
+
+    def test_MOIs_added_as_unknown_when_not_in_dict(self):
+        """
+        Assert that variants in all other genes not in the panel dict
+        have MOI INFO field added as 'UNKNOWN'
+        """
+        all_mois_not_in_panel_dict = []
+        for gene, variant_list in self.gene_variant_dict.items():
+            if gene != 'POMC':
+                all_mois_for_gene = [
+                    variant.info['MOI'] for variant in variant_list
+                ]
+                all_mois_not_in_panel_dict.append(all_mois_for_gene)
+
+        assert all(('UNKNOWN',) for moi in all_mois_not_in_panel_dict)
 
 
 class TestWriteOutFlaggedVCF():
-    pass
+    """
+    Test writing out the pysam object as a VCF file works as expected
+    """
+    vcf_contents, _, _ = vcf.read_in_vcf(
+        os.path.join(TEST_DATA_DIR, TEST_SPLIT_VCF)
+    )
 
+    test_panel_dict =  {'POMC': {'mode_of_inheritance': 'AR'}}
 
-class TestBcftoolsRemoveCSQAnnotation():
-    pass
+    flagged_vcf = (
+        '126560840-23326Q0015-23NGWES4-9526-F-103698_markdup_recalibrated'
+        '_Haplotyper_annotated.vcf.flagged.vcf'
+    )
+
+    gene_variant_dict = vcf.add_MOI_field(vcf_contents, test_panel_dict)
+
+    def test_write_out_flagged_vcf(self):
+        """
+        Test that the write_out_flagged_vcf function creates a flagged VCF file
+        as expected
+        """
+        vcf.write_out_flagged_vcf(
+            self.flagged_vcf, self.gene_variant_dict, self.vcf_contents
+        )
+
+        assert os.path.exists(self.flagged_vcf)
+
+        os.remove(self.flagged_vcf)
