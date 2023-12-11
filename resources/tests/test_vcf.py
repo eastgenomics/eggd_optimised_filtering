@@ -205,7 +205,7 @@ class TestAddMOIFlag():
                 ]
                 all_mois_not_in_panel_dict.append(all_mois_for_gene)
 
-        assert all(('UNKNOWN',) for moi in all_mois_not_in_panel_dict)
+        assert all(('NONE',) for moi in all_mois_not_in_panel_dict)
 
 
 class TestWriteOutFlaggedVCF():

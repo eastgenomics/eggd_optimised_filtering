@@ -225,7 +225,7 @@ def add_MOI_field(vcf_contents, panel_dict) -> dict:
             if all([gene_present, gene_moi]):
                 variant.info['MOI'] = gene_moi
             else:
-                variant.info['MOI'] = 'UNKNOWN'
+                variant.info['MOI'] = 'NONE'
 
     return gene_variant_dict
 
