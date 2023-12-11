@@ -139,14 +139,14 @@ def bcftools_filter(split_vcf, filter_command, filter_vcf):
     )
 
 
-def read_in_vcf(filter_vcf):
+def read_in_vcf(vcf_file):
     """
     Read in the VCF file with the pysam package and add a new header line
     for the MOI flag
 
     Parameters
     ----------
-    filename : string
+    vcf_file : string
         name of the annotated VCF file to be check against filtering parameters
 
     Returns
@@ -159,10 +159,10 @@ def read_in_vcf(filter_vcf):
         string containing VEP split INFO fields to remove so we don't break
         eggd_generate_variant_workbooks which requires unsplit VEP fields
     """
-    print(f"Reading in the split VCF {filter_vcf} with pysam")
+    print(f"Reading in the split VCF {vcf_file} with pysam")
 
     # Read in and create pysam object of the VCF
-    vcf_contents = VariantFile(filter_vcf, 'r')
+    vcf_contents = VariantFile(vcf_file, 'r')
 
     # Get the name of the sample from the VCF
     sample_name = list(vcf_contents.header.samples)[0]
@@ -231,7 +231,7 @@ def add_filtering_flag(vcf_contents, panel_dict) -> dict:
 
 def write_out_flagged_vcf(flagged_vcf, gene_variant_dict, vcf_contents):
     """
-    Write out each record to VCF using pysam
+    Write out each variant record to VCF using pysam
 
     Parameters
     ----------

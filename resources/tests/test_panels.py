@@ -292,7 +292,7 @@ class TestParsePanelAppDump():
                 'genes': [
                     {
                         'transcript': None,
-                        'gene_symbol': 'TEST'
+                        'gene_symbol': 'TEST2'
                     }
                 ]
         }
