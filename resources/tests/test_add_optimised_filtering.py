@@ -38,18 +38,30 @@ class TestCheckPanelString():
 
     @pytest.mark.parametrize(
         "test_input_bad,expected_warning", [
-            ('_HGNC:16627;R49.3_Beckwith-Wiedemann syndrome_G;R228.1_Tuberous sclerosis_G',
-             'More than one panel given: R49.3_Beckwith-Wiedemann syndrome_G;R228.1_Tuberous sclerosis_G'),
-            ('R49.3_Beckwith-Wiedemann syndrome_G;R228.1_Tuberous sclerosis_G;_HGNC:16627',
-             'More than one panel given: R49.3_Beckwith-Wiedemann syndrome_G;R228.1_Tuberous sclerosis_G'),
-            ('R49.3_Beckwith-Wiedemann syndrome_G;_HGNC:16627;R228.1_Tuberous sclerosis_G',
-             'More than one panel given: R49.3_Beckwith-Wiedemann syndrome_G;R228.1_Tuberous sclerosis_G'),
-            ('_HGNC:16627;_HGNC:795;R49.3_Beckwith-Wiedemann syndrome_G;R228.1_Tuberous sclerosis_G',
-             'More than one panel given: R49.3_Beckwith-Wiedemann syndrome_G;R228.1_Tuberous sclerosis_G'),
-            ('R49.3_Beckwith-Wiedemann syndrome_G;R228.1_Tuberous sclerosis_G;_HGNC:16627;_HGNC:795',
-             'More than one panel given: R49.3_Beckwith-Wiedemann syndrome_G;R228.1_Tuberous sclerosis_G'),
-            ('R49.3_Beckwith-Wiedemann syndrome_G;_HGNC:16627;R228.1_Tuberous sclerosis_G;_HGNC:795',
-             'More than one panel given: R49.3_Beckwith-Wiedemann syndrome_G;R228.1_Tuberous sclerosis_G')
+            (('_HGNC:16627;R49.3_Beckwith-Wiedemann syndrome_G;R228.1'
+            '_Tuberous sclerosis_G'),
+            ('More than one panel given: R49.3_Beckwith-Wiedemann syndrome_G'
+             ';R228.1_Tuberous sclerosis_G')),
+            (('R49.3_Beckwith-Wiedemann syndrome_G;R228.1_Tuberous sclerosis'
+              '_G;_HGNC:16627'),
+             ('More than one panel given: R49.3_Beckwith-Wiedemann syndrome'
+              '_G;R228.1_Tuberous sclerosis_G')),
+            (('R49.3_Beckwith-Wiedemann syndrome_G;_HGNC:16627;R228.1'
+              '_Tuberous sclerosis_G'),
+             ('More than one panel given: R49.3_Beckwith-Wiedemann syndrome'
+              '_G;R228.1_Tuberous sclerosis_G')),
+            (('_HGNC:16627;_HGNC:795;R49.3_Beckwith-Wiedemann syndrome_G;'
+              'R228.1_Tuberous sclerosis_G'),
+             ('More than one panel given: R49.3_Beckwith-Wiedemann syndrome'
+              '_G;R228.1_Tuberous sclerosis_G')),
+            (('R49.3_Beckwith-Wiedemann syndrome_G;R228.1_Tuberous sclerosis'
+              '_G;_HGNC:16627;_HGNC:795'),
+             ('More than one panel given: R49.3_Beckwith-Wiedemann syndrome'
+              '_G;R228.1_Tuberous sclerosis_G')),
+            (('R49.3_Beckwith-Wiedemann syndrome_G;_HGNC:16627;R228.1_'
+              'Tuberous sclerosis_G;_HGNC:795'),
+             ('More than one panel given: R49.3_Beckwith-Wiedemann syndrome_G'
+              ';R228.1_Tuberous sclerosis_G'))
         ]
     )
     def test_check_panel_string_multiple_panels_given(
@@ -59,6 +71,5 @@ class TestCheckPanelString():
         Check warning is raised when more than one gene panel is given
         as the input string (multiple HGNCs are fine)
         """
-        with pytest.raises(AssertionError) as exc_info:
+        with pytest.raises(AssertionError, match=expected_warning):
             check_panel_string(test_input_bad)
-        assert str(exc_info.value) == expected_warning

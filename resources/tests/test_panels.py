@@ -22,7 +22,9 @@ class TestParseGenePanels():
     containing each clinical indication as key and PanelApp panel ID set as
     value
     """
-    genepanels_tsv = os.path.join(TEST_DATA_DIR, TEST_GENEPANELS_CORRECT_FORMAT)
+    genepanels_tsv = os.path.join(
+        TEST_DATA_DIR, TEST_GENEPANELS_CORRECT_FORMAT
+    )
     genepanels_tsv2 = os.path.join(TEST_DATA_DIR, TEST_GENEPANELS_BAD_FORMAT)
 
     def test_parse_genepanels_when_correct_format(self):
@@ -32,10 +34,11 @@ class TestParseGenePanels():
         assert panels.parse_genepanels(self.genepanels_tsv) == {
             'C1.1_Inherited Stroke': {''},
             'C2.1_INSR': {''},
-            'R100.3_Rare syndromic craniosynostosis or isolated multisuture synostosis_P': {'168'},
-            'R101.1_Ehlers Danlos syndrome with a likely monogenic cause_P': {'53'}
+            ('R100.3_Rare syndromic craniosynostosis or isolated multisuture'
+             ' synostosis_P'): {'168'},
+            ('R101.1_Ehlers Danlos syndrome with a likely monogenic '
+             'cause_P'): {'53'}
         }, "Genepanels not parsed correctly into dictionary"
-
 
     def test_parse_genepanels_when_multiple_panel_ids_for_one_panel(self):
         """
@@ -82,7 +85,10 @@ class TestGetPanelIDFromGenePanels():
         Check assertion error is raised if > 1 panel ID found for the panel
         string
         """
-        expected_error = "Multiple panel IDs found for panel string: R104.3_Skeletal dysplasia_P"
+        expected_error = (
+            "Multiple panel IDs found for panel string: R104.3_Skeletal "
+            "dysplasia_P"
+        )
         with pytest.raises(AssertionError, match=expected_error):
             panels.get_panel_id_from_genepanels(
                 'R104.3_Skeletal dysplasia_P', self.test_panels_dict
@@ -153,7 +159,9 @@ class TestTransformPanelAppDumpToDict():
                     'transcript': None,
                     'hgnc_id': 'HGNC:464',
                     'confidence_level': '3',
-                    'mode_of_inheritance': 'BIALLELIC, autosomal or pseudoautosomal',
+                    'mode_of_inheritance': (
+                        'BIALLELIC, autosomal or pseudoautosomal'
+                    ),
                     'mode_of_pathogenicity': None,
                     'penetrance': None,
                     'gene_justification': 'PanelApp',
@@ -172,7 +180,9 @@ class TestTransformPanelAppDumpToDict():
                     'transcript': None,
                     'hgnc_id': 'HGNC:464',
                     'confidence_level': '3',
-                    'mode_of_inheritance': 'BIALLELIC, autosomal or pseudoautosomal',
+                    'mode_of_inheritance': (
+                        'BIALLELIC, autosomal or pseudoautosomal'
+                    ),
                     'mode_of_pathogenicity': None,
                     'penetrance': None,
                     'gene_justification': 'PanelApp',
@@ -192,7 +202,9 @@ class TestTransformPanelAppDumpToDict():
                     'transcript': None,
                     'hgnc_id': 'HGNC:464',
                     'confidence_level': '3',
-                    'mode_of_inheritance': 'BIALLELIC, autosomal or pseudoautosomal',
+                    'mode_of_inheritance': (
+                        'BIALLELIC, autosomal or pseudoautosomal'
+                    ),
                     'mode_of_pathogenicity': None,
                     'penetrance': None,
                     'gene_justification': 'PanelApp',
@@ -215,7 +227,9 @@ class TestTransformPanelAppDumpToDict():
                     'transcript': None,
                     'hgnc_id': 'HGNC:464',
                     'confidence_level': '3',
-                    'mode_of_inheritance': 'BIALLELIC, autosomal or pseudoautosomal',
+                    'mode_of_inheritance': (
+                        'BIALLELIC, autosomal or pseudoautosomal'
+                    ),
                     'mode_of_pathogenicity': None,
                     'penetrance': None,
                     'gene_justification': 'PanelApp',
@@ -242,7 +256,9 @@ class TestTransformPanelAppDumpToDict():
                     'transcript': None,
                     'hgnc_id': 'HGNC:464',
                     'confidence_level': '3',
-                    'mode_of_inheritance': 'BIALLELIC, autosomal or pseudoautosomal',
+                    'mode_of_inheritance': (
+                        'BIALLELIC, autosomal or pseudoautosomal'
+                    ),
                     'mode_of_pathogenicity': None,
                     'penetrance': None,
                     'gene_justification': 'PanelApp',
@@ -255,7 +271,6 @@ class TestTransformPanelAppDumpToDict():
                 "PanelApp dict not created correctly when PanelApp external_id"
                 " key is missing"
         )
-
 
     def test_transform_panelapp_dump_to_dict_when_no_panels_left(self):
         """
@@ -350,6 +365,7 @@ class TestParsePanelAppDump():
             " is empty"
         )
 
+
 class TestFormatPanelInfo():
     """
     Test that the format_panel_info function works correctly
@@ -378,37 +394,45 @@ class TestFormatPanelInfo():
         'panel_name': 'Severe early-onset obesity',
         'external_id': '130',
         'panel_version': '4.0',
-        'genes': [{
-            'transcript': None,
-            'hgnc_id': 'HGNC:13210',
-            'confidence_level': '3',
-            'mode_of_inheritance': 'BIALLELIC, autosomal or pseudoautosomal',
-            'mode_of_pathogenicity': None,
-            'penetrance': 'Complete',
-            'gene_justification': 'PanelApp',
-            'transcript_justification': 'PanelApp',
-            'alias_symbols': 'RP55',
-            'gene_symbol': 'ARL6'
-        },
-        {
-            'transcript': None,
-            'hgnc_id': 'HGNC:13210',
-            'confidence_level': '3',
-            'mode_of_inheritance': None,
-            'mode_of_pathogenicity': None,
-            'penetrance': 'Complete',
-            'gene_justification': 'PanelApp',
-            'transcript_justification': 'PanelApp',
-            'alias_symbols': 'RP55',
-            'gene_symbol': 'TEST'
-        }
+        'genes': [
+            {
+                'transcript': None,
+                'hgnc_id': 'HGNC:13210',
+                'confidence_level': '3',
+                'mode_of_inheritance': (
+                    'BIALLELIC, autosomal or pseudoautosomal'
+                ),
+                'mode_of_pathogenicity': None,
+                'penetrance': 'Complete',
+                'gene_justification': 'PanelApp',
+                'transcript_justification': 'PanelApp',
+                'alias_symbols': 'RP55',
+                'gene_symbol': 'ARL6'
+            },
+            {
+                'transcript': None,
+                'hgnc_id': 'HGNC:13210',
+                'confidence_level': '3',
+                'mode_of_inheritance': None,
+                'mode_of_pathogenicity': None,
+                'penetrance': 'Complete',
+                'gene_justification': 'PanelApp',
+                'transcript_justification': 'PanelApp',
+                'alias_symbols': 'RP55',
+                'gene_symbol': 'TEST'
+            }
         ],
         'regions': [{
             'confidence_level': '3',
-            'mode_of_inheritance': 'MONOALLELIC, autosomal or pseudoautosomal, imprinted status unknown',
+            'mode_of_inheritance': (
+                'MONOALLELIC, autosomal or pseudoautosomal, imprinted status'
+                ' unknown'
+            ),
             'mode_of_pathogenicity': None,
             'penetrance': None,
-            'name': '15q11q13 recurrent (PWS/AS) region (BP1-BP3, Class 1) Loss',
+            'name': (
+                '15q11q13 recurrent (PWS/AS) region (BP1-BP3, Class 1) Loss'
+            ),
             'chrom': '15',
             'start_37': None,
             'end_37': None,
@@ -444,7 +468,9 @@ class TestFormatPanelInfo():
             self.test_format_panel_dict_gene_and_region
         ) == {
             'ARL6': {
-                'mode_of_inheritance': 'BIALLELIC, autosomal or pseudoautosomal',
+                'mode_of_inheritance': (
+                    'BIALLELIC, autosomal or pseudoautosomal'
+                ),
                 'entity_type': 'gene'
             },
             'TEST': {
@@ -452,7 +478,10 @@ class TestFormatPanelInfo():
                 'entity_type': 'gene'
             },
             '15q11q13 recurrent (PWS/AS) region (BP1-BP3, Class 1) Loss': {
-                'mode_of_inheritance': 'MONOALLELIC, autosomal or pseudoautosomal, imprinted status unknown',
+                'mode_of_inheritance': (
+                    'MONOALLELIC, autosomal or pseudoautosomal, imprinted '
+                    'status unknown'
+                ),
                 'entity_type': 'region'
             }
         }, (
@@ -486,19 +515,30 @@ class TestSimplifyMOITerms():
             'entity_type': 'gene'
         },
         'gene2': {
-            'mode_of_inheritance': 'MONOALLELIC, autosomal or pseudoautosomal, NOT imprinted',
+            'mode_of_inheritance': (
+                'MONOALLELIC, autosomal or pseudoautosomal, NOT imprinted'
+            ),
             'entity_type': 'gene'
         },
         'gene3': {
-            'mode_of_inheritance': 'MONOALLELIC, autosomal or pseudoautosomal, imprinted status unknown',
+            'mode_of_inheritance': (
+                'MONOALLELIC, autosomal or pseudoautosomal, imprinted status '
+                'unknown'
+            ),
             'entity_type': 'gene'
         },
         'gene4': {
-            'mode_of_inheritance': 'MONOALLELIC, autosomal or pseudoautosomal, maternally imprinted (paternal allele expressed)',
+            'mode_of_inheritance': (
+                'MONOALLELIC, autosomal or pseudoautosomal, maternally '
+                'imprinted (paternal allele expressed)'
+            ),
             'entity_type': 'gene'
         },
         'gene5': {
-            'mode_of_inheritance': 'MONOALLELIC, autosomal or pseudoautosomal, paternally imprinted (maternal allele expressed)',
+            'mode_of_inheritance': (
+                'MONOALLELIC, autosomal or pseudoautosomal, paternally '
+                'imprinted (maternal allele expressed)'
+            ),
             'entity_type': 'gene'
         },
         'gene6': {
@@ -506,11 +546,17 @@ class TestSimplifyMOITerms():
             'entity_type': 'gene'
         },
         'gene7': {
-            'mode_of_inheritance': 'BOTH monoallelic and biallelic (but BIALLELIC mutations cause a more SEVERE disease form), autosomal or pseudoautosomal',
+            'mode_of_inheritance': (
+                'BOTH monoallelic and biallelic (but BIALLELIC mutations '
+                'cause a more SEVERE disease form), autosomal or '
+                'pseudoautosomal'
+            ),
             'entity_type': 'gene'
         },
         'gene8': {
-            'mode_of_inheritance': 'BOTH monoallelic and biallelic, autosomal or pseudoautosomal',
+            'mode_of_inheritance': (
+                'BOTH monoallelic and biallelic, autosomal or pseudoautosomal'
+            ),
             'entity_type': 'gene'
         },
         'gene9': {
@@ -522,15 +568,21 @@ class TestSimplifyMOITerms():
             'entity_type': 'gene'
         },
         'gene11': {
-            'mode_of_inheritance': 'Other - please specifiy in evaluation comments',
+            'mode_of_inheritance': (
+                'Other - please specifiy in evaluation comments'
+            ),
             'entity_type': 'gene'
         },
         'gene12': {
-            'mode_of_inheritance': 'Other - please specifiy in evaluation comments',
+            'mode_of_inheritance': (
+                'Other - please specifiy in evaluation comments'
+            ),
             'entity_type': 'gene'
         },
         'gene13': {
-            'mode_of_inheritance': 'Other - please specify in evaluation comments',
+            'mode_of_inheritance': (
+                'Other - please specify in evaluation comments'
+            ),
             'entity_type': 'gene'
         },
         'gene14': {
@@ -538,11 +590,18 @@ class TestSimplifyMOITerms():
             'entity_type': 'gene'
         },
         'gene15': {
-            'mode_of_inheritance': 'X-LINKED: hemizygous mutation in males, biallelic mutations in females',
+            'mode_of_inheritance': (
+                'X-LINKED: hemizygous mutation in males, biallelic mutations '
+                'in females'
+            ),
             'entity_type': 'gene'
         },
         'gene16': {
-            'mode_of_inheritance': 'X-LINKED: hemizygous mutation in males, monoallelic mutations in females may cause disease (may be less severe, later onset than males)',
+            'mode_of_inheritance': (
+                'X-LINKED: hemizygous mutation in males, monoallelic mutations'
+                ' in females may cause disease (may be less severe, later '
+                'onset than males)'
+            ),
             'entity_type': 'gene'
         },
         'gene17': {
@@ -559,31 +618,32 @@ class TestSimplifyMOITerms():
         PanelApp MOI terms simplified correctly, including when MOI is None
         """
         assert panels.simplify_MOI_terms(self.test_gene_dict) == {
-        'gene1': {'mode_of_inheritance': 'AR'},
-        'gene2': {'mode_of_inheritance': 'AD',},
-        'gene3': {'mode_of_inheritance': 'AD',},
-        'gene4': {'mode_of_inheritance': 'AD'},
-        'gene5': {'mode_of_inheritance': 'AD'},
-        'gene6': {'mode_of_inheritance': 'NONE'},
-        'gene7': {'mode_of_inheritance': 'AD/AR'},
-        'gene8': {'mode_of_inheritance': 'AD/AR'},
-        'gene9': {'mode_of_inheritance': 'MITOCHONDRIAL'},
-        'gene10': {'mode_of_inheritance': 'OTHER'},
-        'gene11': {'mode_of_inheritance': 'OTHER'},
-        'gene12': {'mode_of_inheritance': 'OTHER'},
-        'gene13': {'mode_of_inheritance': 'OTHER'},
-        'gene14': {'mode_of_inheritance': 'UNKNOWN'},
-        'gene15': {'mode_of_inheritance': 'XLR'},
-        'gene16': {'mode_of_inheritance': 'XLD'},
-        'gene17': {'mode_of_inheritance': 'NONE'}
-    }, "MOIs not simplified correctly"
-
+            'gene1': {'mode_of_inheritance': 'AR'},
+            'gene2': {'mode_of_inheritance': 'AD'},
+            'gene3': {'mode_of_inheritance': 'AD'},
+            'gene4': {'mode_of_inheritance': 'AD'},
+            'gene5': {'mode_of_inheritance': 'AD'},
+            'gene6': {'mode_of_inheritance': 'NONE'},
+            'gene7': {'mode_of_inheritance': 'AD/AR'},
+            'gene8': {'mode_of_inheritance': 'AD/AR'},
+            'gene9': {'mode_of_inheritance': 'MITOCHONDRIAL'},
+            'gene10': {'mode_of_inheritance': 'OTHER'},
+            'gene11': {'mode_of_inheritance': 'OTHER'},
+            'gene12': {'mode_of_inheritance': 'OTHER'},
+            'gene13': {'mode_of_inheritance': 'OTHER'},
+            'gene14': {'mode_of_inheritance': 'UNKNOWN'},
+            'gene15': {'mode_of_inheritance': 'XLR'},
+            'gene16': {'mode_of_inheritance': 'XLD'},
+            'gene17': {'mode_of_inheritance': 'NONE'}
+        }, "MOIs not simplified correctly"
 
     def test_simplify_MOI_terms_if_dict_is_none(self):
         """
         Test an empty dict is given back if an empty dict is given
         """
-        assert panels.simplify_MOI_terms(self.test_empty_dict_if_only_hgncs) == defaultdict(dict), (
+        assert panels.simplify_MOI_terms(
+            self.test_empty_dict_if_only_hgncs
+        ) == defaultdict(dict), (
             "Empty dict not returned correctly after MOI simplification"
             " when empty dict given"
         )

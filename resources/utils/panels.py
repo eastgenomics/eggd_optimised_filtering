@@ -46,7 +46,7 @@ def parse_genepanels(genepanels_file):
             panel_data.setdefault(clin_ind, set()).add(panel_id)
 
     # Get any panels which have more than 1 PanelApp ID in genepanels file
-    duplicate_ids = {k:sorted(v) for k, v in panel_data.items() if len(v) > 1}
+    duplicate_ids = {k: sorted(v) for k, v in panel_data.items() if len(v) > 1}
 
     # Raise error if multiple panel IDs exist for one indication, as this
     # could indicate errors across the whole genepanels TSV
@@ -136,7 +136,10 @@ def transform_panelapp_dump_to_dict(panel_dump):
                 'transcript': None,
                 'hgnc_id': 'HGNC:1071',
                 'confidence_level': '3',
-                'mode_of_inheritance': 'MONOALLELIC, autosomal or pseudoautosomal, imprinted status unknown',
+                'mode_of_inheritance': (
+                    'MONOALLELIC, autosomal or pseudoautosomal, imprinted '
+                    'status unknown'
+                ),
                 'mode_of_pathogenicity': None,
                 'penetrance': None,
                 'gene_justification': 'PanelApp',
@@ -160,7 +163,10 @@ def transform_panelapp_dump_to_dict(panel_dump):
                     'transcript': None,
                     'hgnc_id': 'HGNC:1071',
                     'confidence_level': '3',
-                    'mode_of_inheritance': 'MONOALLELIC, autosomal or pseudoautosomal, imprinted status unknown',
+                    'mode_of_inheritance': (
+                        'MONOALLELIC, autosomal or pseudoautosomal, imprinted '
+                        'status unknown'
+                    ),
                     'mode_of_pathogenicity': None,
                     'penetrance': None,
                     'gene_justification': 'PanelApp',
@@ -254,7 +260,7 @@ def format_panel_info(panel_data) -> dict:
                 # conf_level 3 indicates sufficient gene-disease association
                 # evidence for use in variant interpretation (3 is green, 2
                 # amber, 1 red)
-                if conf_level >=3:
+                if conf_level >= 3:
                     panel_dict[region_name]['mode_of_inheritance'] = moi
                     panel_dict[region_name]['entity_type'] = 'region'
     else:

@@ -288,7 +288,8 @@ def bcftools_remove_csq_annotation(input_vcf, fields_to_collapse):
     )
 
     cmd = (
-        f"bcftools annotate -x {fields_to_collapse} {input_vcf} -o {output_vcf}"
+        f"bcftools annotate -x {fields_to_collapse} {input_vcf} "
+        "-o {output_vcf}"
     )
 
     output = subprocess.run(cmd, shell=True, capture_output=True)

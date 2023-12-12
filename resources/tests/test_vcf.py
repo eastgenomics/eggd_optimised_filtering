@@ -22,20 +22,25 @@ TEST_SPLIT_VCF = (
     "Haplotyper_annotated.vcf.split.vcf"
 )
 
+
 class TestBgzip(unittest.TestCase):
     """
     Test the function which uses subprocess to bgzip a file
     """
     annotated_split_vcf = os.path.join(TEST_DATA_DIR, TEST_SPLIT_VCF)
+
     def test_bgzip_output_file_exists(self):
         """
         Test that gzipped output file exists
         """
         vcf.bgzip(self.annotated_split_vcf)
-        assert os.path.exists(os.path.join(TEST_DATA_DIR,
-            "126560840-23326Q0015-23NGWES4-9526-F-103698_markdup_"
-            "recalibrated_Haplotyper_annotated.vcf.split.vcf.gz"
-        )), "gzipped file does not exist"
+        assert os.path.exists(
+            os.path.join(
+                TEST_DATA_DIR,
+                "126560840-23326Q0015-23NGWES4-9526-F-103698_markdup_"
+                "recalibrated_Haplotyper_annotated.vcf.split.vcf.gz"
+            )
+        ), "gzipped file does not exist"
 
         # Remove the gzipped VCF
         os.remove(os.path.join(
@@ -61,6 +66,7 @@ class TestBcftoolsPreProcess():
     separate INFO fields
     """
     annotated_vcf = os.path.join(TEST_DATA_DIR, TEST_ANNOTATED_VCF)
+
     def test_bcftools_pre_process_variant_count(self, capsys):
         """
         Test variant counts before and after bcftools +split-vep
@@ -116,7 +122,9 @@ class TestReadInVCF():
         """
 
         # Check sample name parsed correctly
-        assert self.sample_name == '126560840-23326Q0015-23NGWES4-9526-F-103698'
+        assert self.sample_name == (
+            '126560840-23326Q0015-23NGWES4-9526-F-103698'
+        )
 
     def test_read_in_vcf_fields_to_collapse_parsed_correctly(self):
         """
@@ -177,7 +185,7 @@ class TestAddMOIFlag():
         os.path.join(TEST_DATA_DIR, TEST_SPLIT_VCF)
     )
 
-    test_panel_dict =  {'POMC': {'mode_of_inheritance': 'AR'}}
+    test_panel_dict = {'POMC': {'mode_of_inheritance': 'AR'}}
 
     gene_variant_dict = vcf.add_MOI_field(vcf_contents, test_panel_dict)
 
@@ -216,7 +224,7 @@ class TestWriteOutFlaggedVCF():
         os.path.join(TEST_DATA_DIR, TEST_SPLIT_VCF)
     )
 
-    test_panel_dict =  {'POMC': {'mode_of_inheritance': 'AR'}}
+    test_panel_dict = {'POMC': {'mode_of_inheritance': 'AR'}}
 
     flagged_vcf = (
         '126560840-23326Q0015-23NGWES4-9526-F-103698_markdup_recalibrated'
