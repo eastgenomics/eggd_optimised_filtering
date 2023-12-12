@@ -1,5 +1,5 @@
 name: pytest
-on: [pull_request]
+on: [push]
 
 jobs:
   build:
@@ -21,19 +21,17 @@ jobs:
         wget https://github.com/samtools/bcftools/releases/download/1.18/bcftools-1.18.tar.bz2
         tar xf bcftools-1.18.tar.bz2
         cd bcftools-1.18
-        ./configure --prefix=/usr/local/bin
+        ./configure --prefix=/usr/local/
         sudo make
         sudo make install
-        export PATH=/usr/local/bin:$PATH
     - name: Build htslib
       run: |
         wget https://github.com/samtools/htslib/releases/download/1.18/htslib-1.18.tar.bz2
         tar xf htslib-1.18.tar.bz2
         cd htslib-1.18
-        ./configure --prefix=/usr/local/bin
+        ./configure --prefix=/usr/local/
         sudo make
         sudo make install
-        export PATH=/usr/local/bin:$PATH
     - name: Test with pytest
       run: |
         export BCFTOOLS_PLUGINS=/usr/local/libexec/bcftools
