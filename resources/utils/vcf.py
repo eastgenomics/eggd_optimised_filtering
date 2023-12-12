@@ -1,5 +1,5 @@
 """
-Functions related to processing and reading in the VCF
+Functions related to reading, processing and writing the VCF
 """
 import os
 import subprocess
@@ -60,6 +60,10 @@ def bcftools_pre_process(input_vcf) -> str:
     -------
     output_vcf : str
         name of VCF split by bcftools
+    Raises
+    ------
+    AssertionError
+        Raised when non-zero exit code returned by bcftools
     """
 
     print(
@@ -121,6 +125,10 @@ def bcftools_filter(split_vcf, filter_command, filter_vcf):
     -------
     filter_vcf : file
         vcf file with PASS/EXCLUDE added to FILTER columns
+    Raises
+    ------
+    AssertionError
+        Raised when non-zero exit code returned by bcftools
     """
     command = f"{filter_command} {split_vcf} -o {filter_vcf}"
 
@@ -157,7 +165,7 @@ def read_in_vcf(vcf_file):
         the full name of the sample
     csq_fields_to_collapse : str
         string containing VEP split INFO fields to remove so we don't break
-        eggd_generate_variant_workbooks which requires unsplit VEP fields
+        eggd_generate_variant_workbook which requires unsplit VEP fields
     """
     print(f"Reading in the split VCF {vcf_file} with pysam")
 
@@ -188,7 +196,7 @@ def read_in_vcf(vcf_file):
 
 def add_MOI_field(vcf_contents, panel_dict) -> dict:
     """
-    Add the flags to each variant which will be used for filtering
+    Add MOI INFO field to each variant which will be used for filtering
 
     Parameters
     ----------
@@ -200,8 +208,8 @@ def add_MOI_field(vcf_contents, panel_dict) -> dict:
     Returns
     -------
     gene_variant_dict : dict
-        dictionary of each gene with all variants in that gene as val
-        and all filtering flags added
+        dictionary of each gene with value as a list of all variants in that
+        gene (plus additional INFO field)
     """
     # Add each variant in a gene/entity to a dict, with gene as key and list
     # of variants as value
@@ -255,22 +263,21 @@ def write_out_flagged_vcf(flagged_vcf, gene_variant_dict, vcf_contents):
 
 def bcftools_remove_csq_annotation(input_vcf, fields_to_collapse):
     """
-    Remove expanded CSQ strings which were used to check rules, as having them
-    expanded would break eggd_generate_variant workbook and they are still
-    present in the VEP CSQ string
+    Remove expanded CSQ strings which were used to check VEP-annotated
+    gene symbol, as having them expanded would break
+    eggd_generate_variant_workbook
 
     Parameters
     ----------
-    input_vcf : str
-        Name of VCF file to have CSQ annotations removed
+    input_vcf : file
+        VCF file to have CSQ annotations removed
     fields_to_collapse : str
-        string containing VEP split INFO fields to remove so we don't break
-        eggd_generate_variant_workbooks which requires unsplit VEP CSQ fields
+        comma-sepaated string of VEP split INFO fields to remove
 
     Returns
     -------
-    output_vcf : str
-        Name of output VCF file
+    output_vcf : file
+        Output VCF file
     """
     output_vcf = f"{Path(input_vcf).stem}.G2P.vcf"
 
@@ -308,7 +315,7 @@ def bcftools_remove_csq_annotation(input_vcf, fields_to_collapse):
 
 def add_annotation(input_vcf, panel_dict, filter_command):
     """
-    Main function to take a VCF and add the flags required for filtering
+    Main function to take a VCF and add the INFO field required for filtering
 
     Parameters
     ----------

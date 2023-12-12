@@ -16,8 +16,9 @@ def parse_genepanels(genepanels_file):
 
     Parameters
     ----------
-    genepanels_file : str
-        path to genepanels file which includes panel IDs
+    genepanels_file : file
+        path to genepanels file which includes clinical indications with
+        panel IDs
 
     Returns
     -------
@@ -30,7 +31,6 @@ def parse_genepanels(genepanels_file):
         Raised if multiple panel IDs are found for one clinical indication
 
     Example return format:
-
     {
         'R136.1_Primary lymphoedema_P': {'65'},
         'R130.1_Short QT syndrome_P': {'224'}
@@ -49,7 +49,7 @@ def parse_genepanels(genepanels_file):
     duplicate_ids = {k:sorted(v) for k, v in panel_data.items() if len(v) > 1}
 
     # Raise error if multiple panel IDs exist for one indication, as this
-    # could indicate errors across the genepanels TSV
+    # could indicate errors across the whole genepanels TSV
     assert not duplicate_ids, (
         f"Multiple panel IDs found for clinical indications: {duplicate_ids}"
     )
@@ -59,7 +59,8 @@ def parse_genepanels(genepanels_file):
     if panels_with_no_id:
         print(
             "Warning: the following panels have no panel ID found: "
-            f"{panels_with_no_id}")
+            f"{panels_with_no_id}"
+        )
 
     return panel_data
 
@@ -73,7 +74,7 @@ def get_panel_id_from_genepanels(panel_string, genepanels_dict):
     panel_string : str
         clinical indication e.g. 'R149.1_Severe early-onset obesity_P'
     genepanels_dict : dict
-        dict containing each clinical ind with the panel ID as val
+        dict containing each clinical ind with the panel ID as value
 
     Returns
     -------
@@ -89,6 +90,7 @@ def get_panel_id_from_genepanels(panel_string, genepanels_dict):
         assert len(panel_ids) < 2, (
             f"Multiple panel IDs found for panel string: {panel_string}"
         )
+        # Get the only panel ID value in the list
         panel_id = panel_ids[0]
         assert panel_id, (
             f"The clinical indication {panel_string} does not have a panel ID "
@@ -210,7 +212,8 @@ def parse_panelapp_dump(panel_id, panelapp_dict):
         print(
             f"WARNING: The panel ID {panel_id} was not found in the PanelApp "
             "JSON dump. This is expected if only HGNCs were given, otherwise"
-            " please check that the panel ID is correct"
+            " please check that the panel ID is correct. Nno MOI-specific "
+            "filtering will be performed"
         )
 
     return my_panel
@@ -255,7 +258,7 @@ def format_panel_info(panel_data) -> dict:
                     panel_dict[region_name]['mode_of_inheritance'] = moi
                     panel_dict[region_name]['entity_type'] = 'region'
     else:
-        print("WARNING - panel dictionary from PanelApp is empty")
+        print("WARNING - panel-specific dictionary from PanelApp is empty")
 
     return panel_dict
 

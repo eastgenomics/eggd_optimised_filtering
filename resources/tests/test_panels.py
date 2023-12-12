@@ -466,7 +466,9 @@ class TestFormatPanelInfo():
         """
         panels.format_panel_info(self.test_panel_dict_not_exists)
         stdout = capsys.readouterr().out
-        expected_warning = ("WARNING - panel dictionary from PanelApp is empty")
+        expected_warning = (
+            "WARNING - panel-specific dictionary from PanelApp is empty"
+        )
         assert expected_warning in stdout, (
             "Warning not printed correctly if empty dict given to "
             "format_panel_info"

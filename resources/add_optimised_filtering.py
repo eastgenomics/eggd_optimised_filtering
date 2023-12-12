@@ -73,7 +73,7 @@ def parse_args() -> argparse.Namespace:
 def check_panel_string(panel_string):
     """
     Check that the panel string given doesn't contain multiple panels
-    (HGNC IDs or one panel with extra HGNC IDs is fine)
+    (only HGNC IDs or one panel with extra HGNC IDs is fine)
 
     Parameters
     ----------
@@ -88,6 +88,7 @@ def check_panel_string(panel_string):
     panels_from_string = re.sub(
         r'_HGNC:[\d]+(;)?', '', panel_string
     ).rstrip(';')
+    # Count number of semi-colons
     panel_counts = panels_from_string.count(';')
 
     assert panel_counts == 0, (
