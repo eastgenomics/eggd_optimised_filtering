@@ -11,9 +11,6 @@ sanitise_shire_output.py
 # Notebook
 *.ipynb
 
-# TXT file of file comparisons
-*.txt
-
 # Scripts
 plotting.py
 

@@ -14,9 +14,9 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install pipenv codecov
-        pipenv install --dev
-        sudo -H python3 -m pip install --no-index --no-deps resources/home/dnanexus/packages/*
+        pip install -r requirements.txt
         export BCFTOOLS_PLUGINS=/usr/local/libexec/bcftools
+        pipenv install --dev
     - name: Test with pytest
       run: |
         pytest -vv --cov resources/
