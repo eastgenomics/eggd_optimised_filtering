@@ -28,4 +28,5 @@ jobs:
         export BCFTOOLS_PLUGINS=/usr/local/libexec/bcftools
     - name: Test with pytest
       run: |
+        echo $PATH
         pytest -vv --cov resources/
