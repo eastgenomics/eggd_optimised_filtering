@@ -22,8 +22,8 @@ jobs:
         tar xf bcftools-1.18.tar.bz2
         cd bcftools-1.18
         ./configure --prefix=/usr/local/libexec
-        make
-        make install
+        sudo make
+        sudo make install
         export PATH=/usr/local/libexec/bin:$PATH
         export BCFTOOLS_PLUGINS=/usr/local/libexec/bcftools
     - name: Test with pytest
