@@ -24,9 +24,8 @@ jobs:
         ./configure --prefix=/usr/local/libexec
         sudo make
         sudo make install
-        export PATH=/usr/local/libexec/bin:$PATH
-        export BCFTOOLS_PLUGINS=/usr/local/libexec/bcftools
     - name: Test with pytest
       run: |
-        echo $PATH
+        export PATH=/usr/local/libexec/bin:$PATH
+        export BCFTOOLS_PLUGINS=/usr/local/libexec/bcftools
         pytest -vv --cov resources/
