@@ -1,6 +1,6 @@
-	R341.1_Hereditary angioedema types I and II_G	HGNC:1228_SG_panel_1.0.0	HGNC:1228
-12	R341.1_Hereditary angioedema types I and II_G	HGNC:1228_SG_panel_1.0.0	HGNC:1228
-524	R367.1_Inherited pancreatic cancer_P	Inherited pancreatic cancer_2.0	HGNC:1100
-524	R367.1_Inherited pancreatic cancer_P	Inherited pancreatic cancer_2.0	HGNC:1101
-524	R367.1_Inherited pancreatic cancer_P	Inherited pancreatic cancer_2.0	HGNC:1787
-14	R367.1_Inherited pancreatic cancer_P	Inherited pancreatic cancer_2.0	HGNC:123
+R341.1_Hereditary angioedema types I and II_G	HGNC:1228_SG_panel_1.0.0	HGNC:1228	
+R341.1_Hereditary angioedema types I and II_G	HGNC:1228_SG_panel_1.0.0	HGNC:1228	12
+R367.1_Inherited pancreatic cancer_P	Inherited pancreatic cancer_2.0	HGNC:1100	524
+R367.1_Inherited pancreatic cancer_P	Inherited pancreatic cancer_2.0	HGNC:1101	524
+R367.1_Inherited pancreatic cancer_P	Inherited pancreatic cancer_2.0	HGNC:1787	524
+R367.1_Inherited pancreatic cancer_P	Inherited pancreatic cancer_2.0	HGNC:123	14

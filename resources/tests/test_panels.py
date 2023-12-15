@@ -109,7 +109,7 @@ class TestGetPanelIDFromGenePanels():
 
     def test_when_more_than_one_panel_id_exists_plus_empty_string(self):
         """
-        Assertion error should be raised if > panel ID exists for a CI
+        Assertion error should be raised if >1 panel ID exists for a CI
         """
         expected_error = (
             "Multiple panel IDs found for panel string: R23_Test_CI_P"
@@ -276,7 +276,7 @@ class TestTransformPanelAppDumpToDict():
         """
         Make sure that error raised if no panels are left after transforming
         """
-        expected_error = ("No panels with IDs found in PanelApp dump")
+        expected_error = "No panels with IDs found in PanelApp dump"
         with pytest.raises(AssertionError, match=expected_error):
             panels.transform_panelapp_dump_to_dict(self.test_panel_dump2)
 
@@ -462,7 +462,8 @@ class TestFormatPanelInfo():
 
     def test_format_panel_info_if_genes_and_regions_above_conf_3(self):
         """
-        Check empty dict created if no genes above conf 3 found
+        Check dict created correctly whens genes and regions above conf level
+        3 are present
         """
         assert panels.format_panel_info(
             self.test_format_panel_dict_gene_and_region

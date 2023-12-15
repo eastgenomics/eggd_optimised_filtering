@@ -42,8 +42,8 @@ def parse_genepanels(genepanels_file):
     # and a set of the panel IDs associated with it
     with open(genepanels_file, encoding="utf-8") as gp_file:
         for line in gp_file:
-            panel_id, clin_ind, panel, gene = line.split('\t')
-            panel_data.setdefault(clin_ind, set()).add(panel_id)
+            clin_ind, panel, gene, panel_id = line.split('\t')
+            panel_data.setdefault(clin_ind, set()).add(panel_id.strip('\n'))
 
     # Get any panels which have more than 1 PanelApp ID in genepanels file
     duplicate_ids = {k: sorted(v) for k, v in panel_data.items() if len(v) > 1}
@@ -218,7 +218,7 @@ def parse_panelapp_dump(panel_id, panelapp_dict):
         print(
             f"WARNING: The panel ID {panel_id} was not found in the PanelApp "
             "JSON dump. This is expected if only HGNCs were given, otherwise"
-            " please check that the panel ID is correct. Nno MOI-specific "
+            " please check that the panel ID is correct. No MOI-specific "
             "filtering will be performed"
         )
 

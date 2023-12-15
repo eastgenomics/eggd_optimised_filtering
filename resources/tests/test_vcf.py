@@ -3,6 +3,7 @@ import pytest
 import sys
 import unittest
 
+from pathlib import Path
 from unittest.mock import Mock, patch
 
 sys.path.append(os.path.abspath(
@@ -20,6 +21,18 @@ TEST_ANNOTATED_VCF = (
 TEST_SPLIT_VCF = (
     "126560840-23326Q0015-23NGWES4-9526-F-103698_markdup_recalibrated_"
     "Haplotyper_annotated.vcf.split.vcf"
+)
+TEST_FLAGGED_VCF = (
+    "126560840-23326Q0015-23NGWES4-9526-F-103698_markdup_recalibrated_"
+    "Haplotyper_annotated.vcf.flagged.vcf"
+)
+TEST_FILTER_VCF = (
+    "126560840-23326Q0015-23NGWES4-9526-F-103698_markdup_recalibrated_"
+    "Haplotyper_annotated.vcf.filter.vcf"
+)
+TEST_TRUNCATED_VCF = (
+    "126560840-23326Q0015-23NGWES4-9526-F-103698_markdup_recalibrated_"
+    "Haplotyper_annotated.vcf.flagged_truncated.vcf"
 )
 
 
@@ -54,7 +67,7 @@ class TestBgzip(unittest.TestCase):
         """
         Test assertion error raised if return code of bgzip not zero
         """
-        mock_vcf.returncode = 1
+        mock_vcf.return_value.returncode = 1
 
         with pytest.raises(AssertionError):
             vcf.bgzip(mock_vcf)
@@ -74,17 +87,28 @@ class TestBcftoolsPreProcess():
         """
         output_vcf = vcf.bcftools_pre_process(self.annotated_vcf)
         stdout = capsys.readouterr().out
-        assert 'Total lines before splitting: 255' in stdout, (
-            "Variant counts pre-split not included as expected"
-        )
-        assert 'Total lines after splitting: 255' in stdout, (
-            "Variant counts after split not included as expected"
-        )
 
-        assert output_vcf == (
+        errors = []
+        if not 'Total lines before splitting: 255' in stdout:
+            errors.append(
+                "Variant counts pre-split not included in stdout as expected"
+            )
+        if not 'Total lines after splitting: 255' in stdout:
+            errors.append(
+                "Variant counts after split not included in stdout as expected"
+            )
+        if not output_vcf == (
             '126560840-23326Q0015-23NGWES4-9526-F-103698_markdup_recalibrated'
             '_Haplotyper_annotated.vcf.split.vcf'
-        ), "Output VCF from bcftools_pre_process not named as expected"
+        ):
+            errors.append(
+                "Output VCF from bcftools_pre_process not named as expected"
+            )
+
+        assert not errors, (
+            "Errors occurred with the output of bcftools_preprocess"
+            "():\n{}".format("\n".join(errors))
+        )
 
         os.remove(
             '126560840-23326Q0015-23NGWES4-9526-F-103698_markdup_recalibrated'
@@ -99,7 +123,7 @@ class TestBcftoolsPreProcess():
         Test bcftools pre-process function which splits VEP vcf
         raises assertion error if return code not zero
         """
-        mock_vcf.returncode = 124
+        mock_vcf.return_value.returncode = 124
 
         with pytest.raises(AssertionError):
             vcf.bcftools_pre_process(mock_vcf)
@@ -203,7 +227,7 @@ class TestAddMOIFlag():
     def test_MOIs_added_as_unknown_when_not_in_dict(self):
         """
         Assert that variants in all other genes not in the panel dict
-        have MOI INFO field added as 'UNKNOWN'
+        have MOI INFO field added as 'NONE'
         """
         all_mois_not_in_panel_dict = []
         for gene, variant_list in self.gene_variant_dict.items():
@@ -245,3 +269,195 @@ class TestWriteOutFlaggedVCF():
         assert os.path.exists(self.flagged_vcf)
 
         os.remove(self.flagged_vcf)
+
+
+class TestCheckWrittenOutVcf():
+    """
+    Test that the test_check_written_out_vcf() function which checks that the
+    pysam header and variants written to file match what was given to the
+    function to write out (i.e. the file is not truncated)
+    """
+    # Read in control VCF which has had CSQ fields expanded by bcftools
+    # +split-vep
+    original_vcf_contents, _, _ = vcf.read_in_vcf(
+        os.path.join(TEST_DATA_DIR, TEST_SPLIT_VCF)
+    )
+    # Create a test gene panel dict for obesity for adding MOI info to
+    # variants
+    test_panel_dict = {
+        'ALMS1': {'mode_of_inheritance': 'AR'},
+        'ARL6': {'mode_of_inheritance': 'AR'},
+        'BBS1': {'mode_of_inheritance': 'AR'},
+        'BBS10': {'mode_of_inheritance': 'AR'},
+        'BBS12': {'mode_of_inheritance': 'AR'},
+        'BBS2': {'mode_of_inheritance': 'AR'},
+        'BBS4': {'mode_of_inheritance': 'AR'},
+        'BBS5': {'mode_of_inheritance': 'AR'},
+        'BBS7': {'mode_of_inheritance': 'AR'},
+        'BBS9': {'mode_of_inheritance': 'AR'},
+        'CEP19': {'mode_of_inheritance': 'AR'},
+        'CPE': {'mode_of_inheritance': 'AR'},
+        'GNAS': {'mode_of_inheritance': 'AD'},
+        'KIDINS220': {'mode_of_inheritance': 'AD'},
+        'LEP': {'mode_of_inheritance': 'AR'},
+        'LEPR': {'mode_of_inheritance': 'AR'},
+        'MC4R': {'mode_of_inheritance': 'AD/AR'},
+        'MKKS': {'mode_of_inheritance': 'AR'},
+        'MKS1': {'mode_of_inheritance': 'AR'},
+        'MYT1L': {'mode_of_inheritance': 'AD'},
+        'NTRK2': {'mode_of_inheritance': 'AD'},
+        'PCSK1': {'mode_of_inheritance': 'AR'},
+        'PGM2L1': {'mode_of_inheritance': 'AR'},
+        'PHF6': {'mode_of_inheritance': 'XLD'},
+        'PHIP': {'mode_of_inheritance': 'AD'},
+        'POMC': {'mode_of_inheritance': 'AR'},
+        'SDCCAG8': {'mode_of_inheritance': 'AR'},
+        'SIM1': {'mode_of_inheritance': 'AD'},
+        'TTC8': {'mode_of_inheritance': 'AR'},
+        'VPS13B': {'mode_of_inheritance': 'AR'},
+        '15q11q13 recurrent (PWS/AS) region (BP1-BP3, Class 1) Loss': {
+            'mode_of_inheritance': 'AD'
+        },
+        '15q11q13 recurrent (PWS/AS) region (BP2-BP3, Class 2) Loss': {
+            'mode_of_inheritance': 'AD'
+        },
+        (
+            '16p11.2 recurrent region (includes SH2B1) (distal region) '
+            '(BP2-BP3) Loss'
+        ): {'mode_of_inheritance': 'AD'}
+    }
+
+    gene_variant_dict = vcf.add_MOI_field(
+        original_vcf_contents, test_panel_dict
+    )
+    # This VCF has one variant removed from the end
+    truncated_vcf = os.path.join(TEST_DATA_DIR, TEST_TRUNCATED_VCF)
+
+    def test_check_written_out_vcf_raises_error(self):
+        """
+        Test error is raised if VCF which was written out which is different/
+        truncated compared to what was supposed to be written out
+        """
+        with pytest.raises(AssertionError):
+            vcf.check_written_out_vcf(
+                self.original_vcf_contents,
+                self.gene_variant_dict,
+                self.truncated_vcf
+            )
+
+
+class TestBcftoolsFilter(unittest.TestCase):
+    """
+    Test the function which uses subprocess to run bcftools filtering
+    """
+    flagged_vcf = os.path.join(TEST_DATA_DIR, TEST_FLAGGED_VCF)
+    filter_command = (
+        "bcftools filter --soft-filter \"EXCLUDE\" -m + "
+        "-e '(CSQ_Consequence~\"synonymous_variant\")'"
+    )
+    filter_vcf = f"{Path(flagged_vcf).stem}.filter.vcf"
+
+    def test_bcftools_filter_creates_file(self):
+        """
+        Test that bcftools filter output file exists
+        """
+        vcf.bcftools_filter(
+            self.flagged_vcf, self.filter_command, self.filter_vcf
+        )
+
+        # Check exists
+        assert os.path.exists(
+                self.filter_vcf
+        ), "bcftools filter output file does not exist"
+
+        # Remove file so doesn't affect test if run again in future
+        os.remove(self.filter_vcf)
+
+
+    @patch('utils.vcf.subprocess.run')
+    def test_bcftools_filter_raises_error_if_return_code_not_zero(
+        self, mock_subprocess
+    ):
+        """
+        Test assertion error raised if return code of bcftools filter not zero
+        """
+        mock_subprocess.return_value.returncode = 2
+
+        with pytest.raises(AssertionError):
+            vcf.bcftools_filter('flag_vcf', 'filter_command', 'filter_vcf')
+
+    @patch('utils.vcf.subprocess.run')
+    def test_bcftools_filter_raises_error_if_variant_counts_not_match(
+        self, mock_subprocess
+    ):
+        """
+        Test assertion error raised if variant counts pre- and post-bcftools
+        filter do not match
+        """
+        mock_subprocess.side_effect = [
+            Mock(stdout=b'14'), Mock(returncode=0), Mock(stdout=b'5')
+        ]
+
+        with pytest.raises(AssertionError):
+            vcf.bcftools_filter('flag_vcf', 'filter_command', 'filter_vcf')
+
+
+class TestBcftoolsRemoveCsqAnnotation(unittest.TestCase):
+    """
+    Test the function which uses subprocess to run bcftools to remove the
+    split CSQ INFO fields from VEP (otherwise already split fields would
+    break eggd_generate_variant_workbook)
+    """
+    filter_vcf = os.path.join(TEST_DATA_DIR, TEST_FILTER_VCF)
+    fields_to_collapse = 'INFO/CSQ_Allele,INFO/CSQ_SYMBOL'
+    resulting_vcf = f"{Path(filter_vcf).stem}.G2P.vcf"
+
+    def test_bcftools_remove_csq_annotation_creates_file(self):
+        """
+        Test a file is created as expected when bcftools annotate is run
+        """
+        vcf.bcftools_remove_csq_annotation(
+            self.filter_vcf, self.fields_to_collapse
+        )
+        assert os.path.exists(
+                self.resulting_vcf
+        ), "bcftools annotate output file does not exist"
+
+        os.remove(self.resulting_vcf)
+
+    @patch('utils.vcf.subprocess.run')
+    def test_bcftools_remove_csq_annotation_error_if_return_code_not_zero(
+        self, mock_subprocess
+    ):
+        """
+        Test assertion error raised if return code of bcftools annotate not
+        zero
+        """
+        mock_subprocess.return_value.returncode = 2
+
+        with pytest.raises(AssertionError):
+            vcf.bcftools_remove_csq_annotation(
+                'filter_vcf', 'csq_fields_to_drop'
+            )
+
+    @patch('utils.vcf.subprocess.run')
+    def test_bcftools_remove_csq_annotation_error_if_variant_counts_not_match(
+        self, mock_subprocess
+    ):
+        """
+        Test assertion error raised if variant counts pre- and post-bcftools
+        annotate do not match
+        """
+
+        # This mocks the output of each of the subprocess calls in turn
+        # within the bcftools_remove_csq_annotation() function
+        # As the number of variants counted pre- and post- are different,
+        # should raise an AssertionError
+        mock_subprocess.side_effect = [
+            Mock(stdout=b'12'), Mock(returncode=0), Mock(stdout=b'10')
+        ]
+
+        with pytest.raises(AssertionError):
+            vcf.bcftools_remove_csq_annotation(
+                'filter_vcf', 'csq_fields_to_drop'
+            )
