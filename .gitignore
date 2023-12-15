@@ -2,24 +2,13 @@
 *.vcf
 *.vcf.gz
 
-!126560840-23326Q0015-23NGWES4-9526-F-103698_markdup_recalibrated_Haplotyper_annotated.vcf.gz
-!126560840-23326Q0015-23NGWES4-9526-F-103698_markdup_recalibrated_Haplotyper_annotated.vcf.split.vcf
-
-# Sample-specific things
-sanitise_shire_output.py
+# Don't ignore test VCFs
+!resources/tests/test_data/*.vcf
+!resources/tests/test_data/*.vcf.gz
+!resources/tests/test_data/*.tsv
 
 # Notebook
 *.ipynb
-
-# Scripts
-plotting.py
-
-# Folders
-routine_filtered/
-optimised_filtered/
-optimised_filtered_split/
-optimised_filtered_split_2/
-optimised_filtered_2/
 
 # Excel
 *.xlsx
@@ -32,9 +21,6 @@ optimised_filtered_2/
 *.csv#
 *.tsv
 *.tsv#
-
-!test_genepanels_bad_format.tsv
-!test_genepanels_formatted_correctly.tsv
 
 # JSON
 *.json
