@@ -462,7 +462,7 @@ class TestFormatPanelInfo():
 
     def test_format_panel_info_if_genes_and_regions_above_conf_3(self):
         """
-        Check dict created correctly whens genes and regions above conf level
+        Check dict created correctly when genes and regions above conf level
         3 are present
         """
         assert panels.format_panel_info(
