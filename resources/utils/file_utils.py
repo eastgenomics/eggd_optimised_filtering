@@ -2,9 +2,6 @@
 General functions which are shared between files
 """
 import json
-import pandas as pd
-
-from pathlib import Path
 
 
 def read_in_json(file_name):
@@ -39,24 +36,6 @@ def write_out_json(file_name, dict_to_write_out) -> None:
     """
     with open(file_name, 'w', encoding='utf8') as fp:
         json.dump(dict_to_write_out, fp, indent=4)
-
-
-def read_in_csv(file_name):
-    """
-    Read in spreadsheet to pandas dataframe
-
-    Parameters
-    ----------
-    file_name : str
-        name of file to be read in
-
-    Returns
-    -------
-    pd.DataFrame
-        CSV converted to pandas dataframe table
-    """
-
-    return pd.read_csv(file_name)
 
 
 def unescape_bcftools_command(bcftools_filter_command):

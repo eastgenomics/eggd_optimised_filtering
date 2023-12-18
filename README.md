@@ -1,5 +1,5 @@
 # eggd_optimised_filtering
-This app takes an annotated VCF (output of eggd_VEP) and adds MOI info to VCF and filters according to provided bcftools string.
+This app takes an annotated VCF (output of eggd_VEP) and adds MOI info to VCF and filters according to the provided bcftools string.
 
 ## Usage
 
@@ -12,17 +12,15 @@ dx run app-GZ9FZ78457v7qjBXPXqGByyP \
     -ipanel_string=[panel string] \
     -igenepanels=[genepanels tsv] \
     -ipanel_dump=[panelapp dump json] \
-    -icsq_to_split=[csq list] \
     --destination=/path/to/output/dir -y
 
-# example with WES vcf (see bottom of page for example $fields & $filter)
+# example with WES vcf (see bottom of page for example $filter)
 dx run app-GZ9FZ78457v7qjBXPXqGByyP \
     -iinput_vcf=file-GVyyBg844vXGvyY77k9qGVyY \
     -ifilter_string="$filter" \
     -ipanel_string="R149.1_Severe early-onset obesity_P" \
     -igenepanels=file-GY4QyKj4p65jx1xJqZKXBV79 \
     -ipanel_dump=file-GY4QxJ04p65zJf3937y01XBP \
-    -icsq_to_split="$fields" \
     --destination=/output/wes_vcf -y
 ```
 
@@ -51,9 +49,7 @@ Optimised filtering uses:
 - bcftools
     - bcftools +split-vep
 
-Example CSQ and filter strings are below:
-'''
-fields="SYMBOL,Consequence,gnomADe_AF,gnomADg_AF,TWE_AF,ClinVar_CLNSIG,ClinVar_CLNSIGCONF,SpliceAI_pred_DS_AG,SpliceAI_pred_DS_AL,SpliceAI_pred_DS_DG,SpliceAI_pred_DS_DL,HGMD_CLASS"
-
-filter="bcftools filter --soft-filter \"EXCLUDE\" -m + -e '(CSQ_Consequence~\"synonymous_variant\" | CSQ_Consequence~\"intron_variant\" | CSQ_Consequence~\"upstream_gene_variant\" | CSQ_Consequence~\"downstream_gene_variant\" | CSQ_Consequence~\"intergenic_variant\" | CSQ_Consequence~\"5_prime_UTR_variant\" | CSQ_Consequence~\"3_prime_UTR_variant\" | CSQ_gnomADe_AF>0.01 | CSQ_gnomADg_AF>0.01 | CSQ_TWE_AF>0.05) & CSQ_ClinVar_CLNSIGCONF\!~ \"pathogenic\\/i\" & (CSQ_SpliceAI_pred_DS_AG<0.2 | CSQ_SpliceAI_pred_DS_AG==\".\") & (CSQ_SpliceAI_pred_DS_AL<0.2 | CSQ_SpliceAI_pred_DS_AL==\".\") & (CSQ_SpliceAI_pred_DS_DG<0.2 | CSQ_SpliceAI_pred_DS_DG==\".\") & (CSQ_SpliceAI_pred_DS_DL<0.2 | CSQ_SpliceAI_pred_DS_DL==\".\") | (MOI=\"BIALLELIC\" & (CSQ_gnomadg_AF>0.005 | CSQ_gnomade_AF>0.005))'"
+Example filter string is below:
+```
+filter="bcftools filter --soft-filter \"EXCLUDE\" -m + -e '(CSQ_Consequence~\"synonymous_variant\" | CSQ_Consequence~\"intron_variant\" | CSQ_Consequence~\"upstream_gene_variant\" | CSQ_Consequence~\"downstream_gene_variant\" | CSQ_Consequence~\"intergenic_variant\" | CSQ_Consequence~\"5_prime_UTR_variant\" | CSQ_Consequence~\"3_prime_UTR_variant\" | CSQ_gnomADe_AF>0.01 | CSQ_gnomADg_AF>0.01 | CSQ_TWE_AF>0.05) & CSQ_ClinVar_CLNSIGCONF\!~ \"pathogenic\\/i\" & (CSQ_SpliceAI_pred_DS_AG<0.2 | CSQ_SpliceAI_pred_DS_AG==\".\") & (CSQ_SpliceAI_pred_DS_AL<0.2 | CSQ_SpliceAI_pred_DS_AL==\".\") & (CSQ_SpliceAI_pred_DS_DG<0.2 | CSQ_SpliceAI_pred_DS_DG==\".\") & (CSQ_SpliceAI_pred_DS_DL<0.2 | CSQ_SpliceAI_pred_DS_DL==\".\") | (MOI=\"BIALLELIC\" & (CSQ_gnomADg_AF>0.005 | CSQ_gnomADe_AF>0.005))'"
 ```

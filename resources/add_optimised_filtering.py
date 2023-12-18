@@ -2,6 +2,7 @@
 Main script which takes a file and adds our flag for optimised filtering
 """
 import argparse
+import re
 
 from utils import vcf
 from utils import panels
@@ -64,59 +65,51 @@ def parse_args() -> argparse.Namespace:
         help="PanelApp JSON dump"
     )
 
-    parser.add_argument(
-        '-s',
-        '--fields_to_split',
-        type=str,
-        required=True,
-        help="CSQ fields to be parsed, comma-separated list"
-    )
-
     args = parser.parse_args()
 
     return args
 
 
-def read_in_config(file_path):
+def check_panel_string(panel_string):
     """
-    Read in the info needed for filtering from JSON config
+    Check that the panel string given doesn't contain multiple panels
+    (only HGNC IDs or one panel with extra HGNC IDs is fine)
 
     Parameters
     ----------
-    file_path : str
-        path of the config file
-
-    Returns
-    -------
-    flag_name : str
-        name of the flag to be added
-    rules : dict
-        dict of the filtering rules for each gene MOI
-    bcftools_filter_string : str
-        bcftools command as a string
+    panel_string : str
+        the panel the patient is being tested for
+    Raises
+    ------
+    AssertionError
+        Raised if more than one panel is given to the tool (HGNC IDs are OK)
     """
-    config_contents = file_utils.read_in_json(file_path)
+    # Check the number of panels
+    panels_from_string = re.sub(
+        r'_HGNC:[\d]+(;)?', '', panel_string
+    ).rstrip(';')
+    # Count number of semi-colons
+    panel_counts = panels_from_string.count(';')
 
-    return list(map(config_contents.get, [
-        'flag_name',
-        'filtering_rules',
-        'VEP_fields_to_split',
-        'bcftools_filter_string'
-    ]))
+    assert panel_counts == 0, (
+        f"More than one panel given: {panels_from_string}"
+    )
+
+    return panels_from_string
 
 
 def main():
     args = parse_args()
     filter_string = args.filter_string.replace("\!~", "!~")
+    panels_from_string = check_panel_string(args.panel_string)
     bcftools_filter_command = file_utils.unescape_bcftools_command(
         filter_string
     )
     panel_dict = panels.get_formatted_dict(
-        args.panel_string, args.genepanels, args.panel_dump
+        panels_from_string, args.genepanels, args.panel_dump
     )
     vcf.add_annotation(
-        args.fields_to_split.split(","), args.input_vcf, panel_dict,
-        bcftools_filter_command
+        args.input_vcf, panel_dict, bcftools_filter_command
     )
 
 

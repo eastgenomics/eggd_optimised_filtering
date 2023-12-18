@@ -2,24 +2,13 @@
 *.vcf
 *.vcf.gz
 
-# Sample-specific things
-sanitise_shire_output.py
+# Don't ignore test VCFs
+!resources/tests/test_data/*.vcf
+!resources/tests/test_data/*.vcf.gz
+!resources/tests/test_data/*.tsv
 
 # Notebook
 *.ipynb
-
-# TXT file of file comparisons
-*.txt
-
-# Scripts
-plotting.py
-
-# Folders
-routine_filtered/
-optimised_filtered/
-optimised_filtered_split/
-optimised_filtered_split_2/
-optimised_filtered_2/
 
 # Excel
 *.xlsx
@@ -31,6 +20,7 @@ optimised_filtered_2/
 *.csv
 *.csv#
 *.tsv
+*.tsv#
 
 # JSON
 *.json

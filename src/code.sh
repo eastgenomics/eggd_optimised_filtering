@@ -23,8 +23,7 @@ main() {
         -f "$filter_string" \
         -p "$panel_string" \
         -g $genepanels_path \
-        -d $panel_dump_path \
-        -s "$csq_to_split"
+        -d $panel_dump_path
 
     # prepare outputs
     echo "All scripts finished successfully, uploading output files to dx"
