@@ -49,7 +49,8 @@ def bcftools_pre_process(input_vcf) -> str:
     """
     Decompose multiple transcript annotations to individual records, and split
     VEP CSQ string fields to individual INFO keys. Adds a 'CSQ_' prefix to
-    these fields to stop potential conflicts with existing INFO fields.
+    these fields to stop potential conflicts with existing INFO fields. Then
+    strips the original INFO/CSQ fields
 
     Parameters
     ----------
@@ -60,17 +61,19 @@ def bcftools_pre_process(input_vcf) -> str:
     -------
     output_vcf : str
         name of VCF split by bcftools
+
     Raises
     ------
     AssertionError
-        Raised when non-zero exit code returned by bcftools
+        Raised when non-zero exit code returned by bcftools or output VCF
+        is truncated (fewer variants than were in input VCF)
     """
 
     print(
         f"Splitting necessary fields from {input_vcf} "
         "with bcftools +split-vep"
     )
-    output_vcf = f"{Path(input_vcf).stem}.split.vcf"
+    output_vcf = f"{Path(input_vcf).stem.split('.')[0]}.split.vcf"
 
     # Check total rows before splitting out columns
     pre_split_total = subprocess.run(
@@ -79,10 +82,10 @@ def bcftools_pre_process(input_vcf) -> str:
         capture_output=True
     )
     # Split out all fields from the CSQ string and name them with
-    # 'CSQ_{field}' as separate INFO fields
+    # 'CSQ_{field}' as separate INFO fields. Remove original CSQ string
     cmd = (
         f"bcftools +split-vep --columns - -a CSQ -Ou -p 'CSQ_'"
-        f" -d {input_vcf} -o {output_vcf}"
+        f" -d {input_vcf} | bcftools annotate -x INFO/CSQ -o {output_vcf}"
     )
 
     output = subprocess.run(cmd, shell=True, capture_output=True)
@@ -118,7 +121,7 @@ def bcftools_pre_process(input_vcf) -> str:
 
 def bcftools_filter(split_vcf, filter_command, filter_vcf):
     """
-    Filter given VCF using bcftools command provided in config
+    Filter the given VCF using bcftools command provided
 
     Parameters
     ----------
@@ -136,7 +139,8 @@ def bcftools_filter(split_vcf, filter_command, filter_vcf):
     Raises
     ------
     AssertionError
-        Raised when non-zero exit code returned by bcftools
+        Raised when non-zero exit code returned by bcftools or number of
+        variants after filtering does not match input VCF
     """
     command = f"{filter_command} {split_vcf} -o {filter_vcf}"
 
@@ -170,8 +174,8 @@ def bcftools_filter(split_vcf, filter_command, filter_vcf):
     post_filter = post_filter_total.stdout.decode()
 
     print(
-        f"Total lines before splitting: {pre_filter}"
-        f"Total lines after splitting: {post_filter}"
+        f"Total lines before filtering: {pre_filter}"
+        f"Total lines after filtering: {post_filter}"
     )
 
     assert pre_filter == post_filter, (
@@ -187,7 +191,8 @@ def read_in_vcf(vcf_file):
     Parameters
     ----------
     vcf_file : string
-        name of the annotated VCF file to be check against filtering parameters
+        name of the annotated VCF file to be checked against filtering
+        parameters
 
     Returns
     -------
@@ -195,9 +200,6 @@ def read_in_vcf(vcf_file):
         contents of the VCF file as a pysam object
     sample_name : str
         the full name of the sample
-    csq_fields_to_collapse : str
-        string containing VEP split INFO fields to remove so we don't break
-        eggd_generate_variant_workbook which requires unsplit VEP fields
     """
     print(f"Reading in the split VCF {vcf_file} with pysam")
 
@@ -207,23 +209,13 @@ def read_in_vcf(vcf_file):
     # Get the name of the sample from the VCF
     sample_name = list(vcf_contents.header.samples)[0]
 
-    # Get a list of each of the VEP fields present in the VCF from the header
-    csq_string_list = vcf_contents.header.info['CSQ'].description.split(
-        'Format: '
-    )[1].split('|')
-
-    # Create single comma separated string of all of them with INFO/CSQ_ prefix
-    csq_fields_to_collapse = ",".join([
-        f"INFO/CSQ_{field}" for field in csq_string_list
-    ])
-
     # Add MOI as INFO field
     vcf_contents.header.info.add(
         "MOI", ".", "String",
         "Mode of inheritance from PanelApp (simplified)"
     )
 
-    return vcf_contents, sample_name, csq_fields_to_collapse
+    return vcf_contents, sample_name
 
 
 def add_MOI_field(vcf_contents, panel_dict) -> dict:
@@ -347,65 +339,62 @@ def check_written_out_vcf(
     )
 
 
-def bcftools_remove_csq_annotation(input_vcf, fields_to_collapse):
+def bcftools_sort(input_vcf):
     """
-    Remove expanded CSQ strings which were used to check VEP-annotated
-    gene symbol, as having them expanded would break
-    eggd_generate_variant_workbook
+    Sort the VCF. As we write out variants in gene order, if a
+    variant is annotated to multiple genes/transcripts and split, we can end up
+    with the VCF not being sorted by position so this fixes that
 
     Parameters
     ----------
-    input_vcf : file
-        VCF file to have CSQ annotations removed
-    fields_to_collapse : str
-        comma-sepaated string of VEP split INFO fields to remove
+    input_vcf : str
+        path to filtered VCF to sort
+    output_vcf : str
+        name of output sorted VCF
 
-    Returns
+    Outputs
     -------
-    output_vcf : file
-        Output VCF file
+    {vcf}.sorted.vcf : file
+        sorted vcf file output from bcftools
     """
-    output_vcf = f"{Path(input_vcf).stem}.G2P.vcf"
+    print(f"Sorting flagged VCF {input_vcf} with bcftools sort")
+    output_vcf = f"{Path(input_vcf).stem.split('.')[0]}.sorted.vcf"
 
-    # check total rows before removing split INFO Fields
-    pre_annotate_total = subprocess.run(
-        f"zgrep -v '^#' {input_vcf} | wc -l", shell=True,
+    # Check total rows before running bcftools sort
+    pre_sort_total = subprocess.run(
+        f"zgrep -v '^#' {input_vcf} | wc -l",
+        shell=True,
         capture_output=True
     )
 
-    cmd = (
-        f"bcftools annotate -x {fields_to_collapse} {input_vcf} "
-        f"-o {output_vcf}"
-    )
+    cmd = f"bcftools sort {input_vcf} -o {output_vcf}"
 
     output = subprocess.run(cmd, shell=True, capture_output=True)
 
     assert output.returncode == 0, (
-        f"\n\tError in annotating VCF with bcftools. VCF: {input_vcf}"
+        f"\n\tError in sorting VCF with bcftools. VCF: {input_vcf}"
         f"\n\tExitcode:{output.returncode}"
         f"\n\t{output.stderr.decode()}"
     )
 
-    # check total rows after removing split INFO fields
-    post_annotate_total = subprocess.run(
-        f"zgrep -v '^#' {output_vcf} | wc -l", shell=True,
+    # Check total rows after sorting
+    post_sort_total = subprocess.run(
+        f"zgrep -v '^#' {output_vcf} | wc -l",
+        shell=True,
         capture_output=True
     )
 
-    pre_annotate = pre_annotate_total.stdout.decode()
-    post_annotate = post_annotate_total.stdout.decode()
+    pre_sort = pre_sort_total.stdout.decode()
+    post_sort = post_sort_total.stdout.decode()
 
     print(
-        f"Total lines before removing split CSQ fields: {pre_annotate}"
-        f"Total lines after removing split CSQ fields: {post_annotate}"
+        f"Total lines before sorting: {pre_sort}"
+        f"Total lines after sorting: {post_sort}"
     )
 
-    assert pre_annotate == post_annotate, (
-        "Number of variants before and after removing CSQ split fields "
-        "does not match"
+    assert pre_sort == post_sort, (
+        "Count of variants before and after bcftools sort do not match"
     )
-
-    return output_vcf
 
 
 def add_annotation(input_vcf, panel_dict, filter_command):
@@ -421,27 +410,28 @@ def add_annotation(input_vcf, panel_dict, filter_command):
     filter_command : str
         full bcftools filter command
     """
-    split_vcf = f"{Path(input_vcf).stem}.split.vcf"
-    filter_vcf = f"{Path(input_vcf).stem}.filter.vcf"
-    flagged_vcf = f"{Path(input_vcf).stem}.flagged.vcf"
+    split_vcf = f"{Path(input_vcf).stem.split('.')[0]}.split.vcf"
+    flagged_vcf = f"{Path(input_vcf).stem.split('.')[0]}.flagged.vcf"
+    sorted_vcf = f"{Path(input_vcf).stem.split('.')[0]}.sorted.vcf"
+    filter_vcf = f"{Path(input_vcf).stem.split('.')[0]}.optimised_filtered.vcf"
 
     # separate csq fields (creates split_vcf)
     bcftools_pre_process(input_vcf)
 
     # create pysam object of vcf for flagging
-    vcf_contents, sample_name, csq_fields_to_drop = read_in_vcf(split_vcf)
+    vcf_contents, sample_name = read_in_vcf(split_vcf)
 
     # add MOI flags from config
     gene_var_dict = add_MOI_field(vcf_contents, panel_dict)
     write_out_flagged_vcf(flagged_vcf, gene_var_dict, vcf_contents)
     check_written_out_vcf(vcf_contents, gene_var_dict, flagged_vcf)
+    bcftools_sort(flagged_vcf)
 
     # run bcftools filter string from config (create filter_vcf)
-    bcftools_filter(flagged_vcf, filter_command, filter_vcf)
-    # return csq fields to standard format
-    final_vcf = bcftools_remove_csq_annotation(filter_vcf, csq_fields_to_drop)
-    bgzip(final_vcf)
+    bcftools_filter(sorted_vcf, filter_command, filter_vcf)
+
+    bgzip(filter_vcf)
     os.remove(split_vcf)
-    os.remove(filter_vcf)
     os.remove(flagged_vcf)
-    os.remove(final_vcf)
+    os.remove(sorted_vcf)
+    os.remove(filter_vcf)
