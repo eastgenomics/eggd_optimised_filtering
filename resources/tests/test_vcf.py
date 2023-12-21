@@ -363,7 +363,9 @@ class TestBcftoolsFilter(unittest.TestCase):
         "bcftools filter --soft-filter \"EXCLUDE\" -m + "
         "-e '(CSQ_Consequence~\"synonymous_variant\")'"
     )
-    filter_vcf = f"{Path(flagged_vcf).stem.split('.')[0]}.G2P.vcf"
+    filter_vcf = (
+        f"{Path(flagged_vcf).stem.split('.')[0]}.optimised_filtered.vcf"
+    )
 
     def test_bcftools_filter_creates_file(self):
         """
