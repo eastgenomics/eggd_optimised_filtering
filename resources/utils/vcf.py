@@ -108,8 +108,9 @@ def bcftools_pre_process(input_vcf) -> str:
         f"Total lines after splitting: {post_split}"
     )
 
-    assert pre_split == post_split, (
-        "Total variants before and after bcftools +split-vep do not match"
+    assert post_split >= pre_split, (
+        "Count of variants following bcftools +split-vep is fewer than the "
+        "input VCF"
     )
 
     return output_vcf

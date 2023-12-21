@@ -128,6 +128,21 @@ class TestBcftoolsPreProcess():
         with pytest.raises(AssertionError):
             vcf.bcftools_pre_process(mock_vcf)
 
+    @patch('utils.vcf.subprocess.run')
+    def test_bcftools_pre_process_raises_error_if_variants_lost(
+        self, mock_subprocess
+    ):
+        """
+        Test assertion error raised if variant are lost following bcftools
+        +split-vep
+        """
+        mock_subprocess.side_effect = [
+            Mock(stdout=b'5'), Mock(returncode=0), Mock(stdout=b'14')
+        ]
+
+        with pytest.raises(AssertionError):
+            vcf.bcftools_pre_process('mock_vcf')
+
 
 class TestReadInVCF():
     """
