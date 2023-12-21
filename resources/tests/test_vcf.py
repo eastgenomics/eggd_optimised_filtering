@@ -20,19 +20,16 @@ TEST_ANNOTATED_VCF = (
 )
 TEST_SPLIT_VCF = (
     "126560840-23326Q0015-23NGWES4-9526-F-103698_markdup_recalibrated_"
-    "Haplotyper_annotated.vcf.split.vcf"
+    "Haplotyper_annotated.split_test.vcf"
 )
 TEST_FLAGGED_VCF = (
     "126560840-23326Q0015-23NGWES4-9526-F-103698_markdup_recalibrated_"
-    "Haplotyper_annotated.vcf.flagged.vcf"
+    "Haplotyper_annotated.flagged_test.vcf"
 )
-TEST_FILTER_VCF = (
-    "126560840-23326Q0015-23NGWES4-9526-F-103698_markdup_recalibrated_"
-    "Haplotyper_annotated.vcf.filter.vcf"
-)
+
 TEST_TRUNCATED_VCF = (
     "126560840-23326Q0015-23NGWES4-9526-F-103698_markdup_recalibrated_"
-    "Haplotyper_annotated.vcf.flagged_truncated.vcf"
+    "Haplotyper_annotated.flagged_truncated.vcf"
 )
 
 
@@ -51,7 +48,7 @@ class TestBgzip(unittest.TestCase):
             os.path.join(
                 TEST_DATA_DIR,
                 "126560840-23326Q0015-23NGWES4-9526-F-103698_markdup_"
-                "recalibrated_Haplotyper_annotated.vcf.split.vcf.gz"
+                "recalibrated_Haplotyper_annotated.split_test.vcf.gz"
             )
         ), "gzipped file does not exist"
 
@@ -59,7 +56,7 @@ class TestBgzip(unittest.TestCase):
         os.remove(os.path.join(
             TEST_DATA_DIR,
             "126560840-23326Q0015-23NGWES4-9526-F-103698_markdup_"
-            "recalibrated_Haplotyper_annotated.vcf.split.vcf.gz"
+            "recalibrated_Haplotyper_annotated.split_test.vcf.gz"
         ))
 
     @patch('utils.vcf.subprocess.run')
@@ -99,7 +96,7 @@ class TestBcftoolsPreProcess():
             )
         if not output_vcf == (
             '126560840-23326Q0015-23NGWES4-9526-F-103698_markdup_recalibrated'
-            '_Haplotyper_annotated.vcf.split.vcf'
+            '_Haplotyper_annotated.split.vcf'
         ):
             errors.append(
                 "Output VCF from bcftools_pre_process not named as expected"
@@ -112,7 +109,7 @@ class TestBcftoolsPreProcess():
 
         os.remove(
             '126560840-23326Q0015-23NGWES4-9526-F-103698_markdup_recalibrated'
-            '_Haplotyper_annotated.vcf.split.vcf'
+            '_Haplotyper_annotated.split.vcf'
         )
 
     @patch('utils.vcf.subprocess.run')
@@ -128,6 +125,21 @@ class TestBcftoolsPreProcess():
         with pytest.raises(AssertionError):
             vcf.bcftools_pre_process(mock_vcf)
 
+    @patch('utils.vcf.subprocess.run')
+    def test_bcftools_pre_process_raises_error_if_variants_lost(
+        self, mock_subprocess
+    ):
+        """
+        Test assertion error raised if variant are lost following bcftools
+        +split-vep
+        """
+        mock_subprocess.side_effect = [
+            Mock(stdout=b'5'), Mock(returncode=0), Mock(stdout=b'14')
+        ]
+
+        with pytest.raises(AssertionError):
+            vcf.bcftools_pre_process('mock_vcf')
+
 
 class TestReadInVCF():
     """
@@ -136,7 +148,7 @@ class TestReadInVCF():
     annotated_split_vcf = os.path.join(TEST_DATA_DIR, TEST_SPLIT_VCF)
 
     # Read in the control VCF with pysam and get sample name and CSQ fields
-    vcf_contents, sample_name, csq_fields_to_collapse = vcf.read_in_vcf(
+    vcf_contents, sample_name = vcf.read_in_vcf(
         annotated_split_vcf
     )
 
@@ -148,42 +160,6 @@ class TestReadInVCF():
         # Check sample name parsed correctly
         assert self.sample_name == (
             '126560840-23326Q0015-23NGWES4-9526-F-103698'
-        )
-
-    def test_read_in_vcf_fields_to_collapse_parsed_correctly(self):
-        """
-        Check the VEP fields are parsed and converted to fields to be
-        collapsed later correctly
-        """
-        assert self.csq_fields_to_collapse == (
-            'INFO/CSQ_Allele,INFO/CSQ_SYMBOL,INFO/CSQ_HGNC_ID,INFO/'
-            'CSQ_VARIANT_CLASS,INFO/CSQ_Consequence,INFO/CSQ_IMPACT,INFO/'
-            'CSQ_EXON,INFO/CSQ_INTRON,INFO/CSQ_Feature,INFO/CSQ_HGVSc,INFO/'
-            'CSQ_HGVSp,INFO/CSQ_HGVS_OFFSET,INFO/CSQ_Existing_variation,INFO/'
-            'CSQ_STRAND,INFO/CSQ_ClinVar,INFO/CSQ_ClinVar_CLNSIG,INFO/'
-            'CSQ_ClinVar_CLNSIGCONF,INFO/CSQ_ClinVar_CLNDN,INFO/'
-            'CSQ_gnomADg_AC,INFO/CSQ_gnomADg_AN,INFO/CSQ_gnomADg_AF,INFO/'
-            'CSQ_gnomADg_nhomalt,INFO/CSQ_gnomADg_popmax,INFO/'
-            'CSQ_gnomADg_AC_popmax,INFO/CSQ_gnomADg_AN_popmax,INFO/'
-            'CSQ_gnomADg_AF_popmax,INFO/CSQ_gnomADg_nhomalt_popmax,INFO/'
-            'CSQ_gnomADe_AC,INFO/CSQ_gnomADe_AN,INFO/CSQ_gnomADe_AF,INFO/'
-            'CSQ_gnomADe_nhomalt,INFO/CSQ_gnomADe_popmax,INFO/'
-            'CSQ_gnomADe_AC_popmax,INFO/CSQ_gnomADe_AN_popmax,INFO/'
-            'CSQ_gnomADe_AF_popmax,INFO/CSQ_gnomADe_nhomalt_popmax,INFO/'
-            'CSQ_gnomADe_non_cancer_AC,INFO/CSQ_gnomADe_non_cancer_AN,INFO/'
-            'CSQ_gnomADe_non_cancer_AF,INFO/CSQ_gnomADe_non_cancer_nhomalt,'
-            'INFO/CSQ_gnomADe_non_cancer_AC_popmax,INFO/'
-            'CSQ_gnomADe_non_cancer_AN_popmax,INFO/'
-            'CSQ_gnomADe_non_cancer_AF_popmax,INFO/'
-            'CSQ_gnomADe_non_cancer_nhomalt_popmax,INFO/'
-            'CSQ_gnomADe_non_cancer_popmax,INFO/CSQ_TWE_AF,INFO/'
-            'CSQ_TWE_AC_Hom,INFO/CSQ_TWE_AC_Het,INFO/CSQ_TWE_AN,'
-            'INFO/CSQ_HGMD,INFO/CSQ_HGMD_PHEN,INFO/CSQ_HGMD_CLASS,'
-            'INFO/CSQ_HGMD_RANKSCORE,INFO/CSQ_SpliceAI_pred_DS_AG,INFO/'
-            'CSQ_SpliceAI_pred_DS_AL,INFO/CSQ_SpliceAI_pred_DS_DG,INFO/'
-            'CSQ_SpliceAI_pred_DS_DL,INFO/CSQ_SpliceAI_pred_DP_AG,INFO/'
-            'CSQ_SpliceAI_pred_DP_AL,INFO/CSQ_SpliceAI_pred_DP_DG,INFO/'
-            'CSQ_SpliceAI_pred_DP_DL,INFO/CSQ_REVEL,INFO/CSQ_CADD_PHRED'
         )
 
     def test_read_in_vcf_adds_info_header_correctly(self):
@@ -205,7 +181,7 @@ class TestAddMOIFlag():
     """
     Test that filtering flag added to variants correctly
     """
-    vcf_contents, _, _ = vcf.read_in_vcf(
+    vcf_contents, _ = vcf.read_in_vcf(
         os.path.join(TEST_DATA_DIR, TEST_SPLIT_VCF)
     )
 
@@ -244,7 +220,7 @@ class TestWriteOutFlaggedVCF():
     """
     Test writing out the pysam object as a VCF file works as expected
     """
-    vcf_contents, _, _ = vcf.read_in_vcf(
+    vcf_contents, _ = vcf.read_in_vcf(
         os.path.join(TEST_DATA_DIR, TEST_SPLIT_VCF)
     )
 
@@ -252,7 +228,7 @@ class TestWriteOutFlaggedVCF():
 
     flagged_vcf = (
         '126560840-23326Q0015-23NGWES4-9526-F-103698_markdup_recalibrated'
-        '_Haplotyper_annotated.vcf.flagged.vcf'
+        '_Haplotyper_annotated.flagged.vcf'
     )
 
     gene_variant_dict = vcf.add_MOI_field(vcf_contents, test_panel_dict)
@@ -279,7 +255,7 @@ class TestCheckWrittenOutVcf():
     """
     # Read in control VCF which has had CSQ fields expanded by bcftools
     # +split-vep
-    original_vcf_contents, _, _ = vcf.read_in_vcf(
+    original_vcf_contents, _ = vcf.read_in_vcf(
         os.path.join(TEST_DATA_DIR, TEST_SPLIT_VCF)
     )
     # Create a test gene panel dict for obesity for adding MOI info to
@@ -346,6 +322,38 @@ class TestCheckWrittenOutVcf():
             )
 
 
+class TestBCftoolsSort(unittest.TestCase):
+    """
+    Test that bcftools sort works as expected
+    """
+    @patch('utils.vcf.subprocess.run')
+    def test_bcftools_sort_raises_error_if_return_code_not_zero(
+        self, mock_subprocess
+    ):
+        """
+        Test assertion error raised if return code of bcftools sort not zero
+        """
+        mock_subprocess.return_value.returncode = 2
+
+        with pytest.raises(AssertionError):
+            vcf.bcftools_sort('input_vcf')
+
+    @patch('utils.vcf.subprocess.run')
+    def test_bcftools_sort_raises_error_if_variant_counts_not_match(
+        self, mock_subprocess
+    ):
+        """
+        Test assertion error raised if variant counts pre- and post-bcftools
+        sort do not match
+        """
+        mock_subprocess.side_effect = [
+            Mock(stdout=b'14'), Mock(returncode=0), Mock(stdout=b'5')
+        ]
+
+        with pytest.raises(AssertionError):
+            vcf.bcftools_sort('flagged_vcf')
+
+
 class TestBcftoolsFilter(unittest.TestCase):
     """
     Test the function which uses subprocess to run bcftools filtering
@@ -355,7 +363,9 @@ class TestBcftoolsFilter(unittest.TestCase):
         "bcftools filter --soft-filter \"EXCLUDE\" -m + "
         "-e '(CSQ_Consequence~\"synonymous_variant\")'"
     )
-    filter_vcf = f"{Path(flagged_vcf).stem}.filter.vcf"
+    filter_vcf = (
+        f"{Path(flagged_vcf).stem.split('.')[0]}.optimised_filtered.vcf"
+    )
 
     def test_bcftools_filter_creates_file(self):
         """
@@ -367,7 +377,7 @@ class TestBcftoolsFilter(unittest.TestCase):
 
         # Check exists
         assert os.path.exists(
-                self.filter_vcf
+            self.filter_vcf
         ), "bcftools filter output file does not exist"
 
         # Remove file so doesn't affect test if run again in future
@@ -400,64 +410,3 @@ class TestBcftoolsFilter(unittest.TestCase):
 
         with pytest.raises(AssertionError):
             vcf.bcftools_filter('flag_vcf', 'filter_command', 'filter_vcf')
-
-
-class TestBcftoolsRemoveCsqAnnotation(unittest.TestCase):
-    """
-    Test the function which uses subprocess to run bcftools to remove the
-    split CSQ INFO fields from VEP (otherwise already split fields would
-    break eggd_generate_variant_workbook)
-    """
-    filter_vcf = os.path.join(TEST_DATA_DIR, TEST_FILTER_VCF)
-    fields_to_collapse = 'INFO/CSQ_Allele,INFO/CSQ_SYMBOL'
-    resulting_vcf = f"{Path(filter_vcf).stem}.G2P.vcf"
-
-    def test_bcftools_remove_csq_annotation_creates_file(self):
-        """
-        Test a file is created as expected when bcftools annotate is run
-        """
-        vcf.bcftools_remove_csq_annotation(
-            self.filter_vcf, self.fields_to_collapse
-        )
-        assert os.path.exists(
-                self.resulting_vcf
-        ), "bcftools annotate output file does not exist"
-
-        os.remove(self.resulting_vcf)
-
-    @patch('utils.vcf.subprocess.run')
-    def test_bcftools_remove_csq_annotation_error_if_return_code_not_zero(
-        self, mock_subprocess
-    ):
-        """
-        Test assertion error raised if return code of bcftools annotate not
-        zero
-        """
-        mock_subprocess.return_value.returncode = 2
-
-        with pytest.raises(AssertionError):
-            vcf.bcftools_remove_csq_annotation(
-                'filter_vcf', 'csq_fields_to_drop'
-            )
-
-    @patch('utils.vcf.subprocess.run')
-    def test_bcftools_remove_csq_annotation_error_if_variant_counts_not_match(
-        self, mock_subprocess
-    ):
-        """
-        Test assertion error raised if variant counts pre- and post-bcftools
-        annotate do not match
-        """
-
-        # This mocks the output of each of the subprocess calls in turn
-        # within the bcftools_remove_csq_annotation() function
-        # As the number of variants counted pre- and post- are different,
-        # should raise an AssertionError
-        mock_subprocess.side_effect = [
-            Mock(stdout=b'12'), Mock(returncode=0), Mock(stdout=b'10')
-        ]
-
-        with pytest.raises(AssertionError):
-            vcf.bcftools_remove_csq_annotation(
-                'filter_vcf', 'csq_fields_to_drop'
-            )
