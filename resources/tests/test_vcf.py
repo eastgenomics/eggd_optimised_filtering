@@ -134,7 +134,7 @@ class TestBcftoolsPreProcess():
         +split-vep
         """
         mock_subprocess.side_effect = [
-            Mock(stdout=b'5'), Mock(returncode=0), Mock(stdout=b'14')
+            Mock(stdout=b'14'), Mock(returncode=0), Mock(stdout=b'5')
         ]
 
         with pytest.raises(AssertionError):
