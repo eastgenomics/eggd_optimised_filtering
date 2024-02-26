@@ -94,18 +94,22 @@ class TestGetPanelIDFromGenePanels():
                 'R104.3_Skeletal dysplasia_P', self.test_panels_dict
             )
 
-    def test_get_panel_id_when_panel_id_is_empty_string(self):
+    def test_get_panel_id_when_panel_id_is_empty_string(self, capsys):
         """
-        Check assertion error is raised if panel ID is empty, i.e. just ''
+        Check expected warning is raised if panel ID is empty, i.e. just ''
         """
-        expected_error = (
-            "The clinical indication R97.1_Thrombophilia_P does not have a "
-            "panel ID found in genepanels"
+        expected_warning = (
+            "WARNING: Panel R97.1_Thrombophilia_P has no PanelApp ID in the "
+            "given genepanels file. No MOI filtering will occur."
         )
-        with pytest.raises(AssertionError, match=expected_error):
-            panels.get_panel_id_from_genepanels(
-                'R97.1_Thrombophilia_P', self.test_panels_dict
-            )
+        panels.get_panel_id_from_genepanels(
+            'R97.1_Thrombophilia_P', self.test_panels_dict
+        )
+        stdout = capsys.readouterr().out
+        assert expected_warning in stdout, (
+            "Warning not raised correctly if panel given which is present"
+            " in genepanels but has no panel ID in this file"
+        )
 
     def test_when_more_than_one_panel_id_exists_plus_empty_string(self):
         """
