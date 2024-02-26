@@ -92,16 +92,17 @@ def get_panel_id_from_genepanels(panel_string, genepanels_dict):
         )
         # Get the only panel ID value in the list
         panel_id = panel_ids[0]
-        assert panel_id, (
-            f"The clinical indication {panel_string} does not have a panel ID "
-            "found in genepanels"
-        )
+        if not panel_id:
+            print(
+                f"WARNING: Panel {panel_string} has no PanelApp ID in the "
+                "given genepanels file. No MOI filtering will occur."
+            )
 
     else:
         print(
             f"WARNING: The panel string given {panel_string} was not found in "
             "the genepanels file. This is expected if only HGNCs have been "
-            "entered, but no MOI-specific filtering will be performed"
+            "entered, but no MOI-specific filtering will be performed."
         )
 
     return panel_id
