@@ -1,6 +1,6 @@
 {
     "name": "eggd_optimised_filtering",
-    "title": "Optimised_filtering",
+    "title": "eggd_optimised_filtering",
     "summary": "Adds extra MOI info to VCF & filters on provided bcftools string",
     "dxapi": "1.0.0",
     "version": "1.0.0",
