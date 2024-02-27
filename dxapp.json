@@ -3,7 +3,7 @@
     "title": "eggd_optimised_filtering",
     "summary": "Adds extra MOI info to VCF & filters on provided bcftools string",
     "dxapi": "1.0.0",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "inputSpec": [
         {
         "name": "input_vcf",
@@ -97,6 +97,9 @@
         "*"
         ]
     },
+    "details": {
+        "whatsNew": "## Changelog\n* App now warns when no PanelApp ID found in genepanels file (previously caused error)\n* Title conforms to eggd standard\n* Panel string label corrected\n* Pre/post split count bug fixed\n "
+      },
     "regionalOptions": {
         "aws:eu-central-1": {
         "systemRequirements": {
