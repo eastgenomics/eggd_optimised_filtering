@@ -98,7 +98,7 @@
         ]
     },
     "details": {
-        "whatsNew": "## Changelog\n* App now warns when no PanelApp ID found in genepanels file (previously caused error)\n* Title conforms to eggd standard\n* Panel string label corrected\n* Pre/post split count bug fixed\n "
+        "whatsNew": "* v1.1.0 App now warns when no PanelApp ID found in genepanels file (previously caused error), Title conforms to eggd standard, Panel string label corrected, Pre/post split count bug fixed; "
       },
     "regionalOptions": {
         "aws:eu-central-1": {
